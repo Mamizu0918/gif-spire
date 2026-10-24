@@ -1,1015 +1,529 @@
-<!doctype html>
-
-<html lang="zh-Hant">
-
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-
-<meta charset="utf-8">
-
-<meta name="viewport" content="width=device-width,initial-scale=1">
-
-<title>天空之牌：碧藍幻想 × Roguelike</title>
-
-<style>
-
-:root {
-
-  --gold: #f7d98a;
-
-  --blue: #73c8ef;
-
-  --text: #f7f5ef;
-
-}
-
-* { box-sizing: border-box; }
-
-body {
-
-  margin: 0;
-
-  color: var(--text);
-
-  font-family: system-ui, sans-serif;
-
-  background: #071425;
-
-}
-
-button { font: inherit; cursor: pointer; color: inherit; }
-
-#game {
-
-  min-height: 100vh;
-
-  background:
-
-    radial-gradient(ellipse at 50% 32%, #5b99c655, transparent 44%),
-
-    linear-gradient(180deg,#142d49,#274b69 38%,#101d31 73%,#080d18);
-
-}
-
-.topbar {
-
-  display: flex;
-
-  justify-content: space-between;
-
-  align-items: center;
-
-  gap: 12px;
-
-  padding: 12px;
-
-  background: #06101eee;
-
-  border-bottom: 1px solid #ffffff35;
-
-}
-
-.brand { font-weight: 900; color: #fff0c7; }
-
-.stats { display: flex; gap: 8px; align-items: center; }
-
-.pill, .btn {
-
-  border: 1px solid #ffffff40;
-
-  border-radius: 8px;
-
-  padding: 8px 10px;
-
-  background: #10233a;
-
-  color: white;
-
-}
-
-.main { max-width: 1280px; margin: auto; padding: 14px; }
-
-.scene {
-
-  display: grid;
-
-  grid-template-columns: 140px minmax(0,1fr) 220px;
-
-  gap: 12px;
-
-  min-height: 390px;
-
-}
-
-.party { display: flex; flex-direction: column; justify-content: center; gap: 10px; }
-
-.member {
-
-  height: 100px;
-
-  position: relative;
-
-  overflow: hidden;
-
-  border: 1px solid #d6eaff66;
-
-  border-radius: 10px;
-
-  background: linear-gradient(135deg,#263c58,#091425);
-
-}
-
-.member img {
-
-  position: absolute;
-
-  height: 120%;
-
-  max-width: 80%;
-
-  left: 0;
-
-  bottom: 0;
-
-  object-fit: contain;
-
-}
-
-.member span {
-
-  position: absolute;
-
-  right: 5px;
-
-  top: 5px;
-
-  font-size: 11px;
-
-  font-weight: bold;
-
-}
-
-.member .hp { top: auto; bottom: 7px; }
-
-.battlefield {
-
-  min-height: 390px;
-
-  position: relative;
-
-  overflow: hidden;
-
-  border: 1px solid #c4e8ff55;
-
-  border-radius: 12px;
-
-  background: linear-gradient(180deg,#a9d8f220,#152c47aa 72%,#07101c);
-
-}
-
-.battlefield:after {
-
-  content: "";
-
-  position: absolute;
-
-  left: -10%; right: -10%; bottom: 0;
-
-  height: 30%;
-
-  background: #b6d7e025;
-
-  clip-path: polygon(0 35%,12% 24%,22% 44%,32% 15%,43% 35%,54% 10%,68% 32%,79% 18%,100% 40%,100% 100%,0 100%);
-
-}
-
-.scene-title { padding: 12px; font-size: 11px; letter-spacing: 2px; }
-
-.hero-art {
-
-  position: absolute;
-
-  bottom: 0;
-
-  left: 15%;
-
-  width: 70%;
-
-  height: 85%;
-
-  object-fit: contain;
-
-  object-position: bottom;
-
-  filter: drop-shadow(0 8px 12px #0009);
-
-}
-
-.enemy {
-
-  padding: 12px;
-
-  border: 1px solid #e4c58d77;
-
-  border-radius: 12px;
-
-  background: linear-gradient(160deg,#392b3c,#0b1426);
-
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-
-}
-
-.enemy-title { color: var(--gold); font-size: 11px; }
-
-.enemy-art {
-
-  width: 100%;
-
-  height: 210px;
-
-  object-fit: contain;
-
-}
-
-.enemy-name { font-size: 18px; font-weight: 900; color: #ffe4b1; }
-
-.intent { color: #ffb7aa; font-size: 12px; margin: 6px; }
-
-.hpbar {
-
-  width: 100%;
-
-  height: 10px;
-
-  background: #1a0b18;
-
-  border: 1px solid #eac7bb88;
-
-  border-radius: 8px;
-
-  overflow: hidden;
-
-}
-
-.hpbar i {
-
-  display: block;
-
-  height: 100%;
-
-  width: 100%;
-
-  background: linear-gradient(90deg,#e74853,#ff8c75);
-
-}
-
-.log {
-
-  margin-top: 12px;
-
-  padding: 10px;
-
-  background: #06101eb8;
-
-  border: 1px solid #ffffff24;
-
-  border-radius: 8px;
-
-  font-size: 13px;
-
-}
-
-.bottom {
-
-  margin-top: 12px;
-
-  padding: 12px;
-
-  border: 1px solid #d6e8f655;
-
-  border-radius: 12px;
-
-  background: linear-gradient(180deg,#172b42,#080f1d);
-
-}
-
-.handtop {
-
-  display: flex;
-
-  justify-content: space-between;
-
-  margin-bottom: 10px;
-
-}
-
-.energy { color: #a8e7ff; font-weight: 900; }
-
-.hand {
-
-  display: grid;
-
-  grid-template-columns: repeat(5,minmax(0,1fr));
-
-  gap: 10px;
-
-}
-
-.card {
-
-  min-height: 165px;
-
-  position: relative;
-
-  overflow: hidden;
-
-  text-align: left;
-
-  border: 1px solid #c4e8ff85;
-
-  border-radius: 9px;
-
-  background: linear-gradient(145deg,#254968,#101d30 60%,#091321);
-
-  padding: 0;
-
-  transition: transform .15s;
-
-}
-
-.card:hover { transform: translateY(-5px); border-color: var(--gold); }
-
-.card:disabled { opacity: .4; cursor: not-allowed; }
-
-.card img {
-
-  position: absolute;
-
-  inset: 0;
-
-  width: 100%;
-
-  height: 100%;
-
-  object-fit: cover;
-
-  opacity: .38;
-
-}
-
-.card:after {
-
-  content: "";
-
-  position: absolute;
-
-  inset: 0;
-
-  background: linear-gradient(180deg,transparent,#050c18cc 55%,#050c18);
-
-}
-
-.cost {
-
-  position: absolute;
-
-  z-index: 2;
-
-  top: 7px; left: 7px;
-
-  width: 27px; height: 27px;
-
-  display: grid; place-items: center;
-
-  border-radius: 50%;
-
-  color: #0b253a;
-
-  font-weight: 900;
-
-  background: linear-gradient(135deg,#e6f8ff,#6dc9fa);
-
-  border: 2px solid white;
-
-}
-
-.card-content {
-
-  position: absolute;
-
-  z-index: 2;
-
-  left: 8px; right: 8px; bottom: 8px;
-
-}
-
-.card-name { font-size: 15px; font-weight: 900; color: #fff0c7; }
-
-.card-desc { font-size: 12px; margin-top: 6px; line-height: 1.5; }
-
-.card-type { color: #8ed8ff; font-size: 10px; margin-top: 8px; }
-
-.actions {
-
-  display: flex;
-
-  justify-content: space-between;
-
-  gap: 10px;
-
-  align-items: center;
-
-  margin-top: 12px;
-
-}
-
-.piles { display: flex; gap: 8px; font-size: 12px; }
-
-.pile { padding: 7px; background: #071323; border-radius: 6px; }
-
-.primary { background: linear-gradient(135deg,#f5dfaa,#bc8647); color: #20160c; }
-
-.overlay {
-
-  display: none;
-
-  position: fixed;
-
-  z-index: 5;
-
-  inset: 0;
-
-  background: #020711df;
-
-  align-items: center;
-
-  justify-content: center;
-
-  padding: 18px;
-
-}
-
-.overlay.show { display: flex; }
-
-.modal {
-
-  width: min(500px,100%);
-
-  padding: 22px;
-
-  border: 1px solid #e3d0a080;
-
-  border-radius: 14px;
-
-  background: #10233a;
-
-}
-
-@media(max-width:760px) {
-
-  .topbar { align-items: flex-start; }
-
-  .brand { font-size: 12px; }
-
-  .stats { gap: 4px; flex-wrap: wrap; justify-content: flex-end; font-size: 11px; }
-
-  .main { padding: 8px; }
-
-  .scene { grid-template-columns: 75px minmax(0,1fr); gap: 7px; }
-
-  .member { height: 75px; }
-
-  .member img { max-width: 90%; }
-
-  .battlefield { min-height: 340px; }
-
-  .hero-art { left: 5%; width: 90%; height: 80%; }
-
-  .enemy { grid-column: 1/-1; }
-
-  .enemy-art { height: 130px; }
-
-  .hand { gap: 5px; }
-
-  .card { min-height: 145px; }
-
-  .card-name { font-size: 11px; }
-
-  .card-desc { font-size: 10px; }
-
-  .card-content { left: 5px; right: 5px; }
-
-  .actions { align-items: flex-start; flex-wrap: wrap; }
-
-  .piles { flex-wrap: wrap; }
-
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GBF x 殺戮尖塔：空之塔戰記</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at center, #1e2638 0%, #0d111a 100%);
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 戰鬥舞台 */
+        #arena {
+            flex: 1;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            position: relative;
+            padding: 20px;
+        }
+
+        .fighter {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+            width: 260px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .avatar {
+            font-size: 64px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+        }
+
+        .intent-box {
+            position: absolute;
+            top: -35px;
+            background: #e74c3c;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(231,76,60,0.8);
+        }
+
+        /* 條狀計量表 */
+        .bar-container { width: 100%; margin: 6px 0; }
+        .bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px; }
+        .bar {
+            width: 100%; height: 12px; background: #333; border-radius: 6px; overflow: hidden;
+        }
+        .hp-fill { height: 100%; background: #2ecc71; width: 100%; transition: width 0.3s; }
+        .charge-fill { height: 100%; background: #f39c12; width: 0%; transition: width 0.3s; }
+        .block-text { color: #3498db; font-weight: bold; font-size: 14px; margin-top: 4px; }
+
+        /* 中央戰鬥訊息與 Chain Burst 提示 */
+        #msg-log {
+            position: absolute;
+            top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #f1c40f;
+            text-shadow: 0 2px 4px #000;
+            text-align: center;
+        }
+
+        /* 召喚石區塊 */
+        #summon-area {
+            position: absolute;
+            left: 20px;
+            bottom: 240px;
+        }
+        .summon-btn {
+            background: linear-gradient(135deg, #4b134f, #c94b4b);
+            border: 2px solid #e056fd;
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(224, 86, 253, 0.5);
+            transition: transform 0.2s;
+        }
+        .summon-btn:disabled {
+            background: #555;
+            border-color: #777;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* 玩家操作列與手牌 */
+        #control-panel {
+            background: rgba(10, 15, 25, 0.95);
+            border-top: 2px solid #34495e;
+            height: 230px;
+            display: flex;
+            flex-direction: column;
+            padding: 10px 20px;
+        }
+
+        #stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+            margin-bottom: 10px;
+        }
+        .ap-badge {
+            background: #e67e22;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        #hand-area {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex: 1;
+            align-items: center;
+        }
+
+        /* 卡牌樣式 */
+        .card {
+            width: 120px;
+            height: 160px;
+            background: #2c3e50;
+            border-radius: 8px;
+            border: 2px solid #7f8c8d;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+        .card:hover {
+            transform: translateY(-15px) scale(1.05);
+            border-color: #f1c40f;
+            z-index: 10;
+        }
+        .card.fire { border-color: #e74c3c; background: #3d1c1c; }
+        .card.water { border-color: #3498db; background: #1c2a3d; }
+        .card.ougi {
+            border-color: #f1c40f;
+            background: linear-gradient(135deg, #4a3b00, #801313);
+            box-shadow: 0 0 15px #f1c40f;
+        }
+        .card-cost {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            background: #e67e22;
+            color: #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            text-align: center;
+            line-height: 24px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .card-title { font-weight: bold; font-size: 13px; text-align: center; }
+        .card-desc { font-size: 11px; color: #bdc3c7; text-align: center; }
+
+        .end-turn-btn {
+            background: #27ae60;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
 </head>
-
 <body>
 
-<div id="game">
+    <div id="arena">
+        <div id="msg-log">戰鬥開始！擊敗星晶獸！</div>
 
-<header class="topbar">
+        <!-- 召喚石 -->
+        <div id="summon-area">
+            <button id="summon-btn" class="summon-btn" onclick="useSummon()">召喚：巴哈姆特 (CD: 3)</button>
+        </div>
 
-  <div class="brand">✦ SKYBOUND DECK ✦<br>碧藍幻想 × 卡牌冒險</div>
+        <!-- 玩家 -->
+        <div class="fighter" id="player-box">
+            <div class="avatar">🗡️</div>
+            <h3>姬塔 / 格蘭</h3>
+            <div class="bar-container">
+                <div class="bar-label"><span>HP</span><span id="player-hp-text">80/80</span></div>
+                <div class="bar"><div id="player-hp-bar" class="hp-fill"></div></div>
+            </div>
+            <div class="bar-container">
+                <div class="bar-label"><span>奧義值</span><span id="player-charge-text">0%</span></div>
+                <div class="bar"><div id="player-charge-bar" class="charge-fill"></div></div>
+            </div>
+            <div class="block-text">護盾: <span id="player-block">0</span></div>
+        </div>
 
-  <div class="stats">
-
-    <span class="pill">樓層 <b id="floor">01</b></span>
-
-    <span class="pill">✧ <b id="gems">120</b></span>
-
-    <span class="pill">回合 <b id="turn">1</b></span>
-
-    <button class="btn" id="menuBtn">選單 ☰</button>
-
-  </div>
-
-</header>
-
-<main class="main">
-
-  <section class="scene">
-
-    <aside class="party">
-
-      <div class="member">
-
-        <img src="https://gbf.wiki/Special:FilePath/Narmaya_A.png" onerror="this.style.display='none'">
-
-        <span>ナルメア</span>
-
-        <span class="hp">生命 <b id="hp0">70</b>/70</span>
-
-      </div>
-
-      <div class="member">
-
-        <img src="https://gbf.wiki/Special:FilePath/Zooey_A.png" onerror="this.style.display='none'">
-
-        <span>ゾーイ</span>
-
-        <span class="hp">生命 <b id="hp1">62</b>/62</span>
-
-      </div>
-
-      <div class="member">
-
-        <img src="https://gbf.wiki/Special:FilePath/Vira_A.png" onerror="this.style.display='none'">
-
-        <span>ヴィーラ</span>
-
-        <span class="hp">生命 <b id="hp2">58</b>/58</span>
-
-      </div>
-
-    </aside>
-
-    <div class="battlefield">
-
-      <div class="scene-title">THE SKY REALM · BATTLEFIELD</div>
-
-      <img class="hero-art" src="https://gbf.wiki/Special:FilePath/Narmaya_A.png" alt="角色立繪" onerror="this.style.display='none'">
-
+        <!-- 敵人 -->
+        <div class="fighter" id="enemy-box">
+            <div id="enemy-intent" class="intent-box">意圖: 攻擊 10</div>
+            <div class="avatar">🐉</div>
+            <h3>星晶獸 · 提亞瑪特</h3>
+            <div class="bar-container">
+                <div class="bar-label"><span>HP</span><span id="enemy-hp-text">120/120</span></div>
+                <div class="bar"><div id="enemy-hp-bar" class="hp-fill" style="background:#e74c3c;"></div></div>
+            </div>
+            <div class="block-text">護盾: <span id="enemy-block">0</span></div>
+        </div>
     </div>
 
-    <aside class="enemy">
-
-      <div class="enemy-title">BOSS · SKYFALL ABERRATION</div>
-
-      <img class="enemy-art" src="https://gbf.wiki/Special:FilePath/Proto_Bahamut.png" alt="Boss"
-
-        onerror="this.style.display='none';document.getElementById('enemyFallback').style.display='block'">
-
-      <div id="enemyFallback" style="display:none;font-size:70px">🐉</div>
-
-      <div class="enemy-name">天空異變・原初龍</div>
-
-      <div class="intent" id="intent">⚔ 下回合攻擊 12</div>
-
-      <div class="hpbar"><i id="enemyBar"></i></div>
-
-      <p>敵方生命 <b id="enemyHP">120</b> / <span id="maxEnemy">120</span></p>
-
-    </aside>
-
-  </section>
-
-  <div class="log" id="log">旅人踏上浮空島。選擇卡牌，擊敗天空異變！</div>
-
-  <section class="bottom">
-
-    <div class="handtop">
-
-      <b>手牌 / SKYBOUND ARSENAL</b>
-
-      <div class="energy">✦ 能量 <span id="energy">3</span> / 3</div>
-
+    <!-- 玩家操作區 -->
+    <div id="control-panel">
+        <div id="stats-bar">
+            <div>
+                <span class="ap-badge">AP: <span id="player-ap">3</span>/3</span>
+                <span style="margin-left: 15px;">抽牌堆: <span id="deck-count">0</span> | 棄牌堆: <span id="discard-count">0</span></span>
+            </div>
+            <div>
+                <span id="chain-burst-indicator" style="color: #e67e22; font-weight: bold; margin-right: 15px;"></span>
+                <button class="end-turn-btn" onclick="endTurn()">結束回合</button>
+            </div>
+        </div>
+        <div id="hand-area"></div>
     </div>
 
-    <div class="hand" id="hand"></div>
-
-    <div class="actions">
-
-      <div class="piles">
-
-        <div class="pile">抽牌堆 <b id="drawCount">5</b></div>
-
-        <div class="pile">棄牌堆 <b id="discardCount">0</b></div>
-
-        <div class="pile">護盾 <b id="block">0</b></div>
-
-      </div>
-
-      <div>
-
-        <button class="btn" id="drawBtn">抽 1 張</button>
-
-        <button class="btn primary" id="endBtn">結束回合 ➜</button>
-
-      </div>
-
-    </div>
-
-  </section>
-
-</main>
-
-<div class="overlay" id="overlay">
-
-  <div class="modal" id="modal"></div>
-
-</div>
-
-</div>
-
-<script>
-
-const ART = {
-
-  narmaya: "https://gbf.wiki/Special:FilePath/Narmaya_A.png",
-
-  zooey: "https://gbf.wiki/Special:FilePath/Zooey_A.png",
-
-  vira: "https://gbf.wiki/Special:FilePath/Vira_A.png",
-
-  djeeta: "https://gbf.wiki/Special:FilePath/Djeeta_A.png"
-
-};
-
-const cards = [
-
-  {name:"胡蝶刃",cost:1,dmg:9,desc:"造成 9 點傷害。",type:"ATTACK",symbol:"⚔",art:ART.narmaya},
-
-  {name:"天裂斬",cost:2,dmg:17,desc:"造成 17 點傷害。",type:"ATTACK",symbol:"✦",art:ART.narmaya},
-
-  {name:"守護之光",cost:1,block:8,desc:"獲得 8 點護盾。",type:"SKILL",symbol:"◈",art:ART.zooey},
-
-  {name:"龍之祝福",cost:1,heal:6,desc:"恢復 6 點生命。",type:"SKILL",symbol:"✧",art:ART.vira},
-
-  {name:"連擊姿態",cost:1,dmg:5,block:4,desc:"造成 5 傷害並獲得 4 護盾。",type:"ATTACK",symbol:"⟡",art:ART.narmaya},
-
-  {name:"奧義解放",cost:3,dmg:28,desc:"造成 28 點傷害。",type:"BURST",symbol:"☄",art:ART.djeeta},
-
-  {name:"戰術洞察",cost:0,block:3,desc:"獲得 3 點護盾。",type:"SKILL",symbol:"◎",art:ART.zooey},
-
-  {name:"破甲突刺",cost:1,dmg:7,weak:2,desc:"造成 7 傷害，敵方攻擊降低 2。",type:"ATTACK",symbol:"➶",art:ART.vira}
-
-];
-
-let state = {
-
-  floor:1, gems:120, turn:1, energy:3,
-
-  enemy:120, maxEnemy:120, block:0,
-
-  hp:[70,62,58], maxHp:[70,62,58],
-
-  hand:[], draw:[], discard:[], weak:0, ended:false
-
-};
-
-const $ = id => document.getElementById(id);
-
-function shuffle(array) {
-
-  for(let i=array.length-1;i>0;i--) {
-
-    const j=Math.floor(Math.random()*(i+1));
-
-    [array[i],array[j]]=[array[j],array[i]];
-
-  }
-
-  return array;
-
-}
-
-function newDeck() {
-
-  return shuffle([...cards.slice(0,5),...cards.slice(0,5)]);
-
-}
-
-function draw(n=1) {
-
-  for(let i=0;i<n;i++) {
-
-    if(!state.draw.length) {
-
-      if(!state.discard.length) break;
-
-      state.draw=shuffle(state.discard.splice(0));
-
-    }
-
-    if(state.draw.length) state.hand.push(state.draw.pop());
-
-  }
-
-}
-
-function log(message) { $("log").textContent=message; }
-
-function render() {
-
-  $("floor").textContent=String(state.floor).padStart(2,"0");
-
-  $("gems").textContent=state.gems;
-
-  $("turn").textContent=state.turn;
-
-  $("energy").textContent=state.energy;
-
-  $("drawCount").textContent=state.draw.length;
-
-  $("discardCount").textContent=state.discard.length;
-
-  $("block").textContent=state.block;
-
-  $("enemyHP").textContent=Math.max(0,state.enemy);
-
-  $("maxEnemy").textContent=state.maxEnemy;
-
-  $("enemyBar").style.width=Math.max(0,state.enemy)/state.maxEnemy*100+"%";
-
-  $("intent").textContent=state.ended?"✦ 敵人已被擊敗":`⚔ 下回合攻擊 ${Math.max(1,12-state.weak)}`;
-
-  state.hp.forEach((hp,i)=>$("hp"+i).textContent=hp);
-
-  $("hand").innerHTML="";
-
-  state.hand.forEach((card,index)=>{
-
-    const button=document.createElement("button");
-
-    button.className="card";
-
-    button.disabled=state.ended||card.cost>state.energy;
-
-    button.innerHTML=`
-
-      <img src="${card.art}" alt="" onerror="this.style.display='none'">
-
-      <span class="cost">${card.cost}</span>
-
-      <div class="card-content">
-
-        <div class="card-name">${card.name}</div>
-
-        <div class="card-desc">${card.desc}</div>
-
-        <div class="card-type">${card.type}</div>
-
-      </div>`;
-
-    button.onclick=()=>play(index);
-
-    $("hand").appendChild(button);
-
-  });
-
-  $("endBtn").disabled=state.ended;
-
-  $("drawBtn").disabled=state.ended||state.energy<1;
-
-}
-
-function play(index) {
-
-  const card=state.hand[index];
-
-  if(!card||card.cost>state.energy||state.ended) return;
-
-  state.energy-=card.cost;
-
-  state.hand.splice(index,1);
-
-  state.discard.push(card);
-
-  if(card.dmg) {
-
-    state.enemy-=card.dmg;
-
-    log(`${card.name}！造成 ${card.dmg} 點傷害。`);
-
-  }
-
-  if(card.block) {
-
-    state.block+=card.block;
-
-    log(`${card.name}！獲得 ${card.block} 點護盾。`);
-
-  }
-
-  if(card.heal) {
-
-    state.hp[0]=Math.min(state.maxHp[0],state.hp[0]+card.heal);
-
-    log(`${card.name}！恢復 ${card.heal} 點生命。`);
-
-  }
-
-  if(card.weak) state.weak=card.weak;
-
-  if(state.enemy<=0) win();
-
-  render();
-
-}
-
-function win() {
-
-  state.ended=true;
-
-  state.gems+=35;
-
-  log("勝利！你擊敗了天空異變，獲得 35 ✧。");
-
-  $("modal").innerHTML=`
-
-    <h2>✦ 戰鬥勝利</h2>
-
-    <p>你獲得 35 ✧，可以繼續深入浮空島。</p>
-
-    <button class="btn primary" id="nextBtn">前往下一層</button>
-
-    <button class="btn" id="closeBtn">查看戰場</button>`;
-
-  $("overlay").classList.add("show");
-
-  $("nextBtn").onclick=nextFloor;
-
-  $("closeBtn").onclick=()=>$("overlay").classList.remove("show");
-
-}
-
-function nextFloor() {
-
-  state.floor++;
-
-  state.turn=1;
-
-  state.maxEnemy=120+state.floor*22;
-
-  state.enemy=state.maxEnemy;
-
-  state.energy=3;
-
-  state.block=0;
-
-  state.weak=0;
-
-  state.ended=false;
-
-  state.draw=newDeck();
-
-  state.discard=[];
-
-  state.hand=[];
-
-  draw(5);
-
-  $("overlay").classList.remove("show");
-
-  log(`抵達第 ${state.floor} 層！敵人變得更強了。`);
-
-  render();
-
-}
-
-function endTurn() {
-
-  if(state.ended) return;
-
-  const hit=Math.max(1,12+(state.floor-1)*2-state.weak);
-
-  const absorbed=Math.min(state.block,hit);
-
-  state.block-=absorbed;
-
-  state.hp[0]=Math.max(0,state.hp[0]-(hit-absorbed));
-
-  state.weak=0;
-
-  if(state.hp[0]<=0) {
-
-    state.ended=true;
-
-    $("modal").innerHTML=`
-
-      <h2>旅程中止</h2>
-
-      <p>主角倒下了，重新開始再試一次吧。</p>
-
-      <button class="btn primary" onclick="location.reload()">重新開始</button>`;
-
-    $("overlay").classList.add("show");
-
-    render();
-
-    return;
-
-  }
-
-  state.turn++;
-
-  state.energy=3;
-
-  state.block=0;
-
-  state.discard.push(...state.hand.splice(0));
-
-  draw(5);
-
-  log(`敵人攻擊 ${hit} 點，護盾抵銷 ${absorbed} 點。`);
-
-  render();
-
-}
-
-function drawOne() {
-
-  if(state.energy<1||state.ended) return;
-
-  state.energy--;
-
-  draw(1);
-
-  log("消耗 1 點能量，抽取一張卡牌。");
-
-  render();
-
-}
-
-function menu() {
-
-  $("modal").innerHTML=`
-
-    <h2>冒險選單</h2>
-
-    <p>出牌消耗能量；攻擊削減敵方生命；護盾可抵擋敵人攻擊。擊敗敵人可獲得結晶並前往下一層。</p>
-
-    <p><a style="color:#9de0ff" href="https://mizagbf.github.io/GBFAL/index.html" target="_blank" rel="noopener">GBF Asset Lookup</a></p>
-
-    <p><a style="color:#9de0ff" href="https://gbf.wiki/" target="_blank" rel="noopener">Granblue Fantasy Wiki</a></p>
-
-    <button class="btn primary" id="resumeBtn">返回戰場</button>`;
-
-  $("overlay").classList.add("show");
-
-  $("resumeBtn").onclick=()=>$("overlay").classList.remove("show");
-
-}
-
-$("endBtn").onclick=endTurn;
-
-$("drawBtn").onclick=drawOne;
-
-$("menuBtn").onclick=menu;
-
-$("overlay").addEventListener("click",event=>{
-
-  if(event.target===$("overlay")) $("overlay").classList.remove("show");
-
-});
-
-state.draw=newDeck();
-
-draw(5);
-
-render();
-
-</script>
-
+    <script>
+        // 戰鬥狀態
+        const state = {
+            player: { maxHp: 80, hp: 80, ap: 3, maxAp: 3, block: 0, charge: 0 },
+            enemy: { maxHp: 120, hp: 120, block: 0, nextAction: 'attack', nextVal: 10 },
+            deck: [],
+            hand: [],
+            discard: [],
+            summonCd: 0,
+            chainCount: 0, // 本回合連續相同屬性計數
+            lastElement: null
+        };
+
+        // 牌庫範本
+        const CARD_TYPES = [
+            { id: 1, name: "紅蓮斬", element: "fire", cost: 1, dmg: 8, block: 0, charge: 15, desc: "火屬性 8 傷，+15% 奧義" },
+            { id: 2, name: "炎之壁", element: "fire", cost: 1, dmg: 0, block: 8, charge: 10, desc: "火屬性 8 盾，+10% 奧義" },
+            { id: 3, name: "激流刺", element: "water", cost: 1, dmg: 7, block: 0, charge: 20, desc: "水屬性 7 傷，+20% 奧義" },
+            { id: 4, name: "水之護符", element: "water", cost: 1, dmg: 0, block: 10, charge: 5, desc: "水屬性 10 盾" },
+            { id: 5, name: "劍氣蓄力", element: "none", cost: 0, dmg: 0, block: 0, charge: 25, desc: "0費 獲得 25% 奧義" }
+        ];
+
+        // 初始牌庫建構 (10張)
+        function initDeck() {
+            state.deck = [
+                {...CARD_TYPES[0]}, {...CARD_TYPES[0]}, {...CARD_TYPES[0]},
+                {...CARD_TYPES[1]}, {...CARD_TYPES[1]},
+                {...CARD_TYPES[2]}, {...CARD_TYPES[2]},
+                {...CARD_TYPES[3]},
+                {...CARD_TYPES[4]}, {...CARD_TYPES[4]}
+            ];
+            shuffle(state.deck);
+        }
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        function log(msg) {
+            document.getElementById('msg-log').innerText = msg;
+        }
+
+        // 開始玩家回合
+        function startPlayerTurn() {
+            state.player.ap = state.player.maxAp;
+            state.player.block = 0;
+            state.chainCount = 0;
+            state.lastElement = null;
+
+            // 抽 4 張牌
+            drawCards(4);
+
+            // 檢查奧義是否滿 100% -> 給予免費奧義卡
+            if (state.player.charge >= 100) {
+                state.hand.push({
+                    id: 99,
+                    name: "【奧義】極致斬擊",
+                    element: "ougi",
+                    cost: 0,
+                    dmg: 35,
+                    block: 0,
+                    charge: 0,
+                    desc: "消耗 100% 奧義造成 35 點爆發傷害！"
+                });
+                log("奧義已滿！釋放奧義之刻已到！");
+            }
+
+            // 更新召喚石 CD
+            if (state.summonCd > 0) state.summonCd--;
+
+            decideEnemyIntent();
+            updateUI();
+        }
+
+        function drawCards(count) {
+            for (let i = 0; i < count; i++) {
+                if (state.deck.length === 0) {
+                    if (state.discard.length === 0) break;
+                    state.deck = [...state.discard];
+                    state.discard = [];
+                    shuffle(state.deck);
+                }
+                state.hand.push(state.deck.pop());
+            }
+        }
+
+        // 打出卡牌
+        function playCard(index) {
+            const card = state.hand[index];
+            if (state.player.ap < card.cost) {
+                log("AP 不足！無法出牌！");
+                return;
+            }
+
+            state.player.ap -= card.cost;
+
+            // 傷害結算
+            if (card.dmg > 0) {
+                dealDamageToEnemy(card.dmg);
+            }
+
+            // 護盾結算
+            if (card.block > 0) {
+                state.player.block += card.block;
+            }
+
+            // 奧義值處理
+            if (card.element === 'ougi') {
+                state.player.charge = 0;
+            } else {
+                state.player.charge = Math.min(100, state.player.charge + card.charge);
+            }
+
+            // 碧藍幻想特色：屬性 Chain Burst 連段判定
+            if (card.element !== 'none' && card.element !== 'ougi') {
+                if (state.lastElement === card.element) {
+                    state.chainCount++;
+                    if (state.chainCount >= 2) {
+                        const burstDmg = 12;
+                        log(`觸發 【Chain Burst: ${card.element.toUpperCase()}】！追擊 ${burstDmg} 點傷害！`);
+                        dealDamageToEnemy(burstDmg);
+                        state.chainCount = 0; // 重置
+                    }
+                } else {
+                    state.lastElement = card.element;
+                    state.chainCount = 1;
+                }
+            }
+
+            // 移除手牌並送入棄牌堆（奧義卡用完消失）
+            state.hand.splice(index, 1);
+            if (card.element !== 'ougi') {
+                state.discard.push(card);
+            }
+
+            checkVictory();
+            updateUI();
+        }
+
+        function dealDamageToEnemy(dmg) {
+            let remain = dmg;
+            if (state.enemy.block > 0) {
+                if (state.enemy.block >= remain) {
+                    state.enemy.block -= remain;
+                    remain = 0;
+                } else {
+                    remain -= state.enemy.block;
+                    state.enemy.block = 0;
+                }
+            }
+            state.enemy.hp = Math.max(0, state.enemy.hp - remain);
+        }
+
+        // 召喚石技能
+        function useSummon() {
+            if (state.summonCd > 0) return;
+            log("巴哈姆特降臨：終焉之刻！造成 25 點全體穿甲重創，AP+1！");
+            state.enemy.hp = Math.max(0, state.enemy.hp - 25);
+            state.player.ap += 1;
+            state.summonCd = 4; // 進入冷卻
+            checkVictory();
+            updateUI();
+        }
+
+        // 結束回合與敵人 AI 行動
+        function endTurn() {
+            // 丟棄手牌
+            while (state.hand.length > 0) {
+                const c = state.hand.pop();
+                if (c.element !== 'ougi') state.discard.push(c);
+            }
+
+            // 敵人行動
+            state.enemy.block = 0;
+            setTimeout(() => {
+                if (state.enemy.nextAction === 'attack') {
+                    let dmg = state.enemy.nextVal;
+                    if (state.player.block >= dmg) {
+                        state.player.block -= dmg;
+                    } else {
+                        dmg -= state.player.block;
+                        state.player.block = 0;
+                        state.player.hp = Math.max(0, state.player.hp - dmg);
+                    }
+                    log(`敵人發動攻擊，造成 ${state.enemy.nextVal} 傷害！`);
+                } else {
+                    state.enemy.block += state.enemy.nextVal;
+                    log(`敵人凝聚風暴壁障，獲得 ${state.enemy.nextVal} 點護盾！`);
+                }
+
+                if (state.player.hp <= 0) {
+                    alert("騎空團全滅... 戰鬥失敗！");
+                    location.reload();
+                    return;
+                }
+
+                setTimeout(startPlayerTurn, 1000);
+                updateUI();
+            }, 600);
+        }
+
+        // 決定敵人下一次意圖
+        function decideEnemyIntent() {
+            const rand = Math.random();
+            if (rand < 0.65) {
+                state.enemy.nextAction = 'attack';
+                state.enemy.nextVal = Math.floor(Math.random() * 6) + 8; // 8~13 傷
+            } else {
+                state.enemy.nextAction = 'defend';
+                state.enemy.nextVal = 12; // 12 盾
+            }
+        }
+
+        function checkVictory() {
+            if (state.enemy.hp <= 0) {
+                setTimeout(() => {
+                    alert("VICTORY!! 成功擊敗星晶獸！");
+                    location.reload();
+                }, 100);
+            }
+        }
+
+        // 渲染畫面
+        function updateUI() {
+            // 玩家狀態
+            document.getElementById('player-hp-text').innerText = `${state.player.hp}/${state.player.maxHp}`;
+            document.getElementById('player-hp-bar').style.width = `${(state.player.hp / state.player.maxHp) * 100}%`;
+            document.getElementById('player-charge-text').innerText = `${state.player.charge}%`;
+            document.getElementById('player-charge-bar').style.width = `${state.player.charge}%`;
+            document.getElementById('player-block').innerText = state.player.block;
+            document.getElementById('player-ap').innerText = state.player.ap;
+
+            // 敵人狀態
+            document.getElementById('enemy-hp-text').innerText = `${state.enemy.hp}/${state.enemy.maxHp}`;
+            document.getElementById('enemy-hp-bar').style.width = `${(state.enemy.hp / state.enemy.maxHp) * 100}%`;
+            document.getElementById('enemy-block').innerText = state.enemy.block;
+            document.getElementById('enemy-intent').innerText = state.enemy.nextAction === 'attack'
+                ? `意圖: 攻擊 ⚔️ ${state.enemy.nextVal}`
+                : `意圖: 防禦 🛡️ ${state.enemy.nextVal}`;
+
+            // 牌庫指示
+            document.getElementById('deck-count').innerText = state.deck.length;
+            document.getElementById('discard-count').innerText = state.discard.length;
+
+            // 召喚石按鈕
+            const summonBtn = document.getElementById('summon-btn');
+            if (state.summonCd > 0) {
+                summonBtn.innerText = `巴哈姆特 (CD: ${state.summonCd})`;
+                summonBtn.disabled = true;
+            } else {
+                summonBtn.innerText = `召喚：巴哈姆特 (READY)`;
+                summonBtn.disabled = false;
+            }
+
+            // 連擊提示
+            const chainText = document.getElementById('chain-burst-indicator');
+            chainText.innerText = state.lastElement ? `連鎖屬性: [${state.lastElement.toUpperCase()}] 連段中` : "";
+
+            // 渲染手牌
+            const handArea = document.getElementById('hand-area');
+            handArea.innerHTML = '';
+            state.hand.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = `card ${card.element}`;
+                cardEl.onclick = () => playCard(index);
+                cardEl.innerHTML = `
+                    <div class="card-cost">${card.cost}</div>
+                    <div class="card-title">${card.name}</div>
+                    <div class="card-desc">${card.desc}</div>
+                    <div style="font-size:10px; text-align:right; color:#888;">${card.element.toUpperCase()}</div>
+                `;
+                handArea.appendChild(cardEl);
+            });
+        }
+
+        // 啟動
+        initDeck();
+        startPlayerTurn();
+    </script>
 </body>
-
 </html>
