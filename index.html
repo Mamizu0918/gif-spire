@@ -2,17 +2,14 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GBF x 殺戮尖塔：空之塔戰記 (豪華重製版)</title>
   <style>
     :root {
-      --bg-dark: #0a0e17;
-      --gold-border: #d4af37;
-      --gold-gradient: linear-gradient(180deg, #ffe082 0%, #b8860b 100%);
-      --gbf-blue: #00d2ff;
-      --charge-gold: #ffaa00;
-      --hp-green: #2ecc71;
-      --shield-blue: #3498db;
+      --gold-primary: #d4af37;
+      --gold-light: #fff1b0;
+      --gbf-blue: #1c2e4a;
+      --dark-panel: rgba(13, 20, 32, 0.88);
+      --font-fantasy: "Cinzel", "Times New Roman", "Microsoft JhengHei", sans-serif;
     }
 
     * {
@@ -20,785 +17,696 @@
       user-select: none;
       margin: 0;
       padding: 0;
-      font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif;
     }
 
     body {
-      background: #05070a;
+      background: radial-gradient(circle at center, #1b2838 0%, #0a0e17 100%);
+      font-family: var(--font-fantasy);
       color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
       overflow: hidden;
-    }
-
-    /* 遊戲主視窗 */
-    #game-container {
-      width: 1000px;
-      height: 650px;
-      background: radial-gradient(circle at 50% 30%, #1e293b 0%, #0b0f19 80%);
-      border: 3px solid var(--gold-border);
-      border-radius: 12px;
-      box-shadow: 0 0 35px rgba(212, 175, 55, 0.25), inset 0 0 50px rgba(0,0,0,0.8);
-      position: relative;
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
     }
 
-    /* 雲海星空動態背景 */
-    .bg-clouds {
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
-      opacity: 0.6;
-      z-index: 0;
-    }
-
-    /* 頂部資訊欄 */
-    .top-bar {
-      position: relative;
-      z-index: 10;
+    /* 頂部戰鬥頂欄 */
+    .header-bar {
+      height: 60px;
+      background: linear-gradient(180deg, rgba(20, 30, 48, 0.95) 0%, rgba(10, 15, 25, 0.8) 100%);
+      border-bottom: 2px solid var(--gold-primary);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 20px;
-      background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+      padding: 0 24px;
+      z-index: 10;
     }
 
     .summon-btn {
-      background: linear-gradient(135deg, #4a0e4e, #2a0845);
-      border: 2px solid #b388ff;
+      background: linear-gradient(135deg, #301847, #5c2087);
+      border: 1px solid #c97aff;
       border-radius: 8px;
-      padding: 8px 16px;
-      color: #ede7f6;
-      cursor: pointer;
+      padding: 6px 14px;
+      color: #fff;
       display: flex;
       align-items: center;
-      gap: 10px;
-      box-shadow: 0 0 12px rgba(179, 136, 255, 0.4);
-      transition: transform 0.15s, filter 0.15s;
+      gap: 8px;
+      box-shadow: 0 0 10px rgba(180, 80, 255, 0.4);
+      cursor: pointer;
+      transition: all 0.2s;
     }
-    .summon-btn:hover {
+    .summon-btn:hover:not(:disabled) {
       transform: scale(1.05);
-      filter: brightness(1.2);
+      box-shadow: 0 0 18px rgba(200, 100, 255, 0.8);
     }
     .summon-btn:disabled {
-      opacity: 0.4;
-      filter: grayscale(1);
+      opacity: 0.5;
       cursor: not-allowed;
-      transform: none;
+      filter: grayscale(0.8);
+    }
+    .summon-btn img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid #ffd700;
     }
 
-    .banner-text {
-      font-size: 16px;
+    .battle-msg {
+      font-size: 1.1rem;
+      color: var(--gold-light);
+      text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
       font-weight: bold;
-      color: #ffeaa7;
-      text-shadow: 0 0 8px rgba(255, 234, 167, 0.6);
-      background: rgba(0, 0, 0, 0.5);
-      padding: 6px 20px;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 215, 0, 0.3);
     }
 
-    /* 戰鬥舞台 */
-    .battle-arena {
-      position: relative;
-      z-index: 2;
+    /* 主戰鬥區域 */
+    .battlefield {
       flex: 1;
+      position: relative;
       display: flex;
-      justify-content: space-around;
+      justify-content: space-between;
       align-items: center;
-      padding: 0 60px;
+      padding: 0 8%;
+      background: url('https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+    }
+    .battlefield::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle, rgba(10, 15, 25, 0.3) 0%, rgba(5, 8, 15, 0.85) 100%);
+      pointer-events: none;
     }
 
-    .fighter-zone {
+    /* 角色立繪與狀態框 */
+    .character-wrap {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
-      width: 280px;
+      z-index: 2;
+      width: 320px;
+    }
+
+    .figure-container {
+      height: 360px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
       position: relative;
     }
 
-    /* 敵人意圖提示泡泡 */
-    .intent-box {
-      background: linear-gradient(180deg, rgba(231, 76, 60, 0.9), rgba(192, 57, 43, 0.9));
-      border: 1px solid #ff7675;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 13px;
-      font-weight: bold;
-      margin-bottom: 8px;
-      box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
-      animation: pulse 1.8s infinite;
+    .character-art {
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.85));
+      transition: transform 0.15s ease, filter 0.2s;
+    }
+    .shake {
+      animation: hitShake 0.35s ease-in-out;
+    }
+    @keyframes hitShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-15px) rotate(-3deg); }
+      40% { transform: translateX(12px) rotate(2deg); }
+      60% { transform: translateX(-8px); }
+      80% { transform: translateX(5px); }
     }
 
+    /* GBF 風格高級狀態資訊面板 */
+    .status-panel {
+      width: 100%;
+      background: var(--dark-panel);
+      border: 1px solid var(--gold-primary);
+      border-radius: 8px;
+      padding: 10px 14px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 4px 15px rgba(0,0,0,0.5);
+      margin-top: 10px;
+    }
+
+    .char-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .char-name {
+      font-size: 1.1rem;
+      color: #fff;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    .shield-badge {
+      background: #1e4a7a;
+      border: 1px solid #5faaff;
+      color: #92d1ff;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      padding: 2px 8px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    /* 條棒通用樣式 */
+    .bar-bg {
+      height: 14px;
+      background: #111;
+      border-radius: 7px;
+      overflow: hidden;
+      border: 1px solid #444;
+      position: relative;
+      margin-bottom: 6px;
+    }
+    .bar-fill {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    .hp-player { background: linear-gradient(90deg, #1b8a3e, #4cd964); }
+    .hp-enemy { background: linear-gradient(90deg, #b01818, #ff4c4c); }
+    .charge-fill { background: linear-gradient(90deg, #b8860b, #ffd700, #fff275); }
+
+    .bar-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+      text-shadow: 1px 1px 2px #000;
+    }
+
+    /* 意圖氣泡 (敵人頭頂) */
+    .intent-tag {
+      position: absolute;
+      top: 0;
+      background: rgba(180, 20, 20, 0.9);
+      border: 1px solid #ff7373;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      box-shadow: 0 0 10px rgba(255, 60, 60, 0.6);
+      animation: pulse 1.5s infinite;
+    }
     @keyframes pulse {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-4px); }
     }
 
-    /* 立繪容器（防破圖保證） */
-    .avatar-wrapper {
-      width: 190px;
-      height: 230px;
-      border-radius: 16px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.7);
-      background: #151d2a;
-      border: 2px solid var(--gold-border);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .avatar-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-
-    /* 狀態量表 (HP / 護盾 / 奧義) */
-    .status-panel {
-      width: 100%;
-      margin-top: 10px;
-      background: rgba(10, 15, 25, 0.85);
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid #334155;
-    }
-
-    .fighter-name {
-      font-weight: bold;
-      font-size: 15px;
+    /* 下方手牌與操作底欄 */
+    .bottom-area {
+      height: 240px;
+      background: linear-gradient(0deg, #090e17 0%, rgba(13, 21, 33, 0.95) 85%, transparent 100%);
+      border-top: 1px solid rgba(212, 175, 55, 0.4);
       display: flex;
       justify-content: space-between;
-      margin-bottom: 4px;
-    }
-
-    .shield-badge {
-      color: #60a5fa;
-      font-size: 13px;
-    }
-
-    .bar-wrap {
-      width: 100%;
-      height: 11px;
-      background: #1e293b;
-      border-radius: 6px;
-      overflow: hidden;
-      margin: 4px 0;
+      align-items: center;
+      padding: 0 30px;
       position: relative;
     }
 
-    .hp-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #10b981, #059669);
-      transition: width 0.3s ease;
-    }
-
-    .charge-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #f59e0b, #d97706);
-      transition: width 0.3s ease;
-    }
-
-    /* 底部手牌區與儀表 */
-    .bottom-zone {
-      position: relative;
-      z-index: 10;
-      background: linear-gradient(180deg, transparent, rgba(5, 7, 10, 0.95) 40%);
-      padding: 10px 20px 18px;
+    .player-stats {
+      width: 180px;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
-
-    .hud-controls {
+    .ap-container {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      max-width: 900px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    .ap-orb {
-      width: 55px;
-      height: 55px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #f97316, #9a3412);
-      border: 3px solid #ffedd5;
-      box-shadow: 0 0 15px rgba(249, 115, 22, 0.6);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      gap: 8px;
+      font-size: 1.4rem;
       font-weight: bold;
+      color: #ffde59;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
     }
-    .ap-orb .ap-num { font-size: 18px; line-height: 1; }
-    .ap-orb .ap-sub { font-size: 9px; opacity: 0.8; }
-
-    .end-turn-btn {
-      background: linear-gradient(180deg, #22c55e 0%, #15803d 100%);
-      border: 2px solid #86efac;
-      padding: 10px 24px;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      color: #fff;
-      cursor: pointer;
-      box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
-      transition: transform 0.1s, filter 0.2s;
-    }
-    .end-turn-btn:hover {
-      transform: scale(1.05);
-      filter: brightness(1.15);
+    .deck-info {
+      font-size: 0.85rem;
+      color: #aaa;
     }
 
-    /* 卡牌容器 */
-    .hand-container {
+    /* 卡牌排布手牌區 */
+    .hand-area {
+      flex: 1;
       display: flex;
       justify-content: center;
-      gap: 14px;
-      min-height: 170px;
       align-items: flex-end;
+      gap: 12px;
+      height: 100%;
+      padding-bottom: 15px;
     }
 
-    /* 卡牌本體 */
+    /* 高級卡牌外觀 */
     .card {
-      width: 125px;
-      height: 175px;
-      background: linear-gradient(145deg, #1e293b, #0f172a);
-      border: 2px solid var(--gold-border);
+      width: 140px;
+      height: 200px;
+      background: linear-gradient(145deg, #1d2737, #0e1520);
+      border: 2px solid var(--gold-primary);
       border-radius: 10px;
-      padding: 6px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
       position: relative;
       cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.6);
+      transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s;
+      overflow: hidden;
     }
-
     .card:hover {
-      transform: translateY(-20px) scale(1.08);
-      border-color: #fde047;
-      box-shadow: 0 12px 24px rgba(253, 224, 71, 0.3);
-      z-index: 20;
+      transform: translateY(-24px) scale(1.08);
+      box-shadow: 0 14px 28px rgba(0,0,0,0.8), 0 0 16px rgba(212, 175, 55, 0.7);
+      border-color: #ffe072;
+      z-index: 10;
     }
 
-    .card.charge-card {
-      border-color: #f59e0b;
-      background: linear-gradient(145deg, #382103, #150d03);
-      box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
-      animation: ougi-pulse 1.5s infinite alternate;
-    }
-
-    @keyframes ougi-pulse {
-      from { box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
-      to { box-shadow: 0 0 25px rgba(245, 158, 11, 0.8); }
-    }
-
-    .card-cost {
+    .card-cost-gem {
       position: absolute;
-      top: -7px;
-      left: -7px;
-      width: 26px;
-      height: 26px;
-      background: radial-gradient(circle, #38bdf8, #0284c7);
-      border: 2px solid #fff;
+      top: 5px;
+      left: 5px;
+      width: 28px;
+      height: 28px;
+      background: radial-gradient(circle, #ff5e62, #8b0000);
+      border: 2px solid #ffd700;
       border-radius: 50%;
-      font-weight: bold;
-      font-size: 13px;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1rem;
       color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.7);
+      z-index: 2;
     }
 
     .card-art-box {
       width: 100%;
-      height: 70px;
-      border-radius: 6px;
-      overflow: hidden;
+      height: 100px;
       background: #000;
-      border: 1px solid #334155;
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid var(--gold-primary);
     }
-    .card-art-box svg {
+    .card-art-box img {
       width: 100%;
       height: 100%;
+      object-fit: cover;
+      opacity: 0.9;
     }
 
-    .card-title {
-      font-size: 12px;
-      font-weight: bold;
-      text-align: center;
-      color: #f8fafc;
-      margin: 4px 0 2px;
-    }
-
-    .card-desc {
-      font-size: 10px;
-      color: #94a3b8;
-      text-align: center;
-      line-height: 1.25;
-      background: rgba(0,0,0,0.3);
-      border-radius: 4px;
-      padding: 3px;
+    .card-body {
+      padding: 6px;
       flex: 1;
       display: flex;
-      align-items: center;
-      justify-content: center;
+      flex-direction: column;
+      justify-content: space-between;
+      text-align: center;
     }
-
-    .card-element {
-      font-size: 9px;
-      text-align: right;
-      color: #e2e8f0;
+    .card-name {
+      font-size: 0.85rem;
       font-weight: bold;
+      color: var(--gold-light);
+      margin-bottom: 2px;
     }
-
-    /* 飄字傷害浮動動畫 */
-    .dmg-popup {
-      position: absolute;
-      font-size: 28px;
-      font-weight: 900;
-      color: #ff4757;
-      text-shadow: 0 0 8px #000;
-      pointer-events: none;
-      animation: floatUp 0.8s ease-out forwards;
-      z-index: 99;
+    .card-desc {
+      font-size: 0.72rem;
+      color: #ddd;
+      line-height: 1.2;
     }
+    .card-attr {
+      font-size: 0.65rem;
+      font-weight: bold;
+      padding: 1px 4px;
+      border-radius: 4px;
+      align-self: center;
+      margin-top: 3px;
+    }
+    .attr-fire { background: #851c1d; color: #ff9b9b; border: 1px solid #e74c3c; }
+    .attr-wind { background: #136a38; color: #92fab6; border: 1px solid #2ecc71; }
+    .attr-none { background: #37474f; color: #cfd8dc; border: 1px solid #78909c; }
 
-    @keyframes floatUp {
-      0% { opacity: 1; transform: translateY(0) scale(1); }
-      100% { opacity: 0; transform: translateY(-45px) scale(1.3); }
+    /* 結束回合按鈕 */
+    .end-turn-wrap {
+      width: 180px;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .end-turn-btn {
+      background: linear-gradient(180deg, #1f8a4c 0%, #0d542c 100%);
+      border: 2px solid #5bf599;
+      color: #fff;
+      padding: 12px 24px;
+      font-size: 1.05rem;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.4);
+      transition: all 0.2s;
+    }
+    .end-turn-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(76, 217, 100, 0.5);
+      border-color: #8cffb8;
     }
   </style>
 </head>
 <body>
 
-<div id="game-container">
-  <div class="bg-clouds"></div>
-
-  <!-- 頂部列 -->
-  <div class="top-bar">
-    <button id="summon-btn" class="summon-btn" onclick="triggerSummon()">
-      <span style="font-size: 20px;">🐉</span>
+  <!-- 頂部欄位 -->
+  <div class="header-bar">
+    <button class="summon-btn" id="summonBtn" onclick="useSummon()">
+      <img src="https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=100&q=80" alt="Bahamut">
       <div>
-        <div style="font-weight: bold; font-size: 13px;">召喚：巴哈姆特</div>
-        <div id="summon-status" style="font-size: 10px; color: #d8b4fe;">READY (立即發動)</div>
+        <div style="font-size: 0.85rem; font-weight: bold;">召喚：巴哈姆特</div>
+        <div id="summonStatus" style="font-size: 0.7rem; color: #ffdb6e;">READY (可獲得 2 AP)</div>
       </div>
     </button>
-    <div id="banner-log" class="banner-text">戰鬥開始！擊退星晶獸提亞瑪特！</div>
-    <div style="font-size: 13px; color: #94a3b8;">
-      回合: <span id="turn-counter" style="color: #fff; font-weight: bold;">1</span>
-    </div>
+    <div class="battle-msg" id="battleMsg">擊退襲來的星晶獸・提亞瑪特！</div>
+    <div style="width: 100px;"></div>
   </div>
 
-  <!-- 戰鬥區域 -->
-  <div class="battle-arena">
+  <!-- 戰鬥中場景 -->
+  <div class="battlefield">
     <!-- 玩家姬塔 -->
-    <div class="fighter-zone" id="player-zone">
-      <div class="avatar-wrapper">
-        <!-- SVG 防破圖向量姬塔 (帶GBF風格配劍女騎士剪影與光環) -->
-        <svg viewBox="0 0 200 240" width="100%" height="100%">
-          <defs>
-            <linearGradient id="djeeta-armor" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#38bdf8"/>
-              <stop offset="100%" stop-color="#1e40af"/>
-            </linearGradient>
-            <linearGradient id="hair-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#fef08a"/>
-              <stop offset="100%" stop-color="#ca8a04"/>
-            </linearGradient>
-          </defs>
-          <!-- 背景光效 -->
-          <circle cx="100" cy="120" r="80" fill="#0284c7" opacity="0.2"/>
-          <!-- 頭髮 -->
-          <circle cx="100" cy="80" r="45" fill="url(#hair-gold)"/>
-          <!-- 身體/盔甲 -->
-          <path d="M60 220 L75 125 L125 125 L140 220 Z" fill="url(#djeeta-armor)"/>
-          <!-- 劍柄與劍身 -->
-          <rect x="140" y="50" width="8" height="150" rx="3" fill="#e2e8f0"/>
-          <rect x="125" y="80" width="38" height="8" rx="2" fill="#d4af37"/>
-          <!-- 姬塔臉部輪廓 -->
-          <ellipse cx="100" cy="85" rx="28" ry="32" fill="#fed7aa"/>
-          <ellipse cx="90" cy="82" rx="3" ry="5" fill="#0369a1"/>
-          <ellipse cx="110" cy="82" rx="3" ry="5" fill="#0369a1"/>
-          <path d="M96 98 Q100 102 104 98" stroke="#e11d48" stroke-width="2" fill="none"/>
-        </svg>
+    <div class="character-wrap">
+      <div class="figure-container">
+        <!-- 採用官方高畫質立繪 + 備援容錯 -->
+        <img id="playerImg" class="character-art" 
+             src="https://img4.gelbooru.com/images/f9/4a/f94aff8b6610357e4ca0d8e88b9cae9b.png" 
+             alt="姬塔" 
+             onerror="this.onerror=null; this.src='https://api.iconify.design/game-icons:swordwoman.svg?color=%23ffd700&width=200';">
       </div>
-
       <div class="status-panel">
-        <div class="fighter-name">
-          <span>姬塔 (團長)</span>
-          <span class="shield-badge">🛡️ <span id="player-shield">0</span></span>
+        <div class="char-title-row">
+          <span class="char-name">姬塔 (團長)</span>
+          <span class="shield-badge">🛡️ <span id="pShield">0</span></span>
         </div>
-        <div class="bar-wrap">
-          <div id="player-hp-bar" class="hp-fill" style="width: 100%;"></div>
+        <div class="bar-bg">
+          <div id="pHpBar" class="bar-fill hp-player" style="width: 100%;"></div>
+          <div class="bar-text" id="pHpText">80 / 80</div>
         </div>
-        <div style="font-size: 10px; display:flex; justify-content:space-between;">
-          <span>HP</span>
-          <span><span id="player-hp">80</span>/80</span>
-        </div>
-        <!-- 奧義條 -->
-        <div class="bar-wrap" style="height: 7px; margin-top: 4px;">
-          <div id="player-charge-bar" class="charge-fill" style="width: 0%;"></div>
-        </div>
-        <div style="font-size: 9px; color: #f59e0b; display:flex; justify-content:space-between;">
-          <span>奧義條 (Charge)</span>
-          <span><span id="player-charge">0</span>%</span>
+        <div class="bar-bg">
+          <div id="pChargeBar" class="bar-fill charge-fill" style="width: 0%;"></div>
+          <div class="bar-text" id="pChargeText">奧義 0%</div>
         </div>
       </div>
     </div>
 
     <!-- 敵人提亞瑪特 -->
-    <div class="fighter-zone" id="enemy-zone">
-      <div id="enemy-intent" class="intent-box">
-        ⚔️ 意圖: 攻擊 12 點
+    <div class="character-wrap">
+      <div class="intent-tag" id="enemyIntent">意圖: 攻擊 12</div>
+      <div class="figure-container">
+        <img id="enemyImg" class="character-art" 
+             src="https://img4.gelbooru.com/images/41/c3/41c3b0b5e5b1b069dcc9742bcf274434.png" 
+             alt="提亞瑪特" 
+             onerror="this.onerror=null; this.src='https://api.iconify.design/game-icons:dragon-head.svg?color=%2300ffcc&width=200';">
       </div>
-
-      <div class="avatar-wrapper">
-        <!-- SVG 提亞瑪特 風之星晶獸美術 -->
-        <svg viewBox="0 0 200 240" width="100%" height="100%">
-          <defs>
-            <linearGradient id="tiamat-wing" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#34d399"/>
-              <stop offset="100%" stop-color="#065f46"/>
-            </linearGradient>
-            <linearGradient id="tiamat-dragon" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#a855f7"/>
-              <stop offset="100%" stop-color="#3b0764"/>
-            </linearGradient>
-          </defs>
-          <circle cx="100" cy="110" r="85" fill="#059669" opacity="0.2"/>
-          <!-- 雙翼翅膀 -->
-          <path d="M20 70 Q50 30 100 80 Q150 30 180 70 Q130 120 100 110 Q70 120 20 70 Z" fill="url(#tiamat-wing)"/>
-          <!-- 召喚多頭星晶獸蛇首 -->
-          <path d="M30 120 Q45 80 70 100 Q60 140 30 120 Z" fill="url(#tiamat-dragon)"/>
-          <path d="M170 120 Q155 80 130 100 Q140 140 170 120 Z" fill="url(#tiamat-dragon)"/>
-          <!-- 提亞瑪特本體 -->
-          <circle cx="100" cy="85" r="22" fill="#fed7aa"/>
-          <path d="M85 85 Q100 60 115 85 Q105 130 95 130 Z" fill="#6ee7b7"/>
-          <ellipse cx="94" cy="85" rx="2" ry="4" fill="#047857"/>
-          <ellipse cx="106" cy="85" rx="2" ry="4" fill="#047857"/>
-        </svg>
-      </div>
-
       <div class="status-panel">
-        <div class="fighter-name">
-          <span style="color: #6ee7b7;">提亞瑪特</span>
-          <span class="shield-badge">🛡️ <span id="enemy-shield">0</span></span>
+        <div class="char-title-row">
+          <span class="char-name">提亞瑪特</span>
+          <span class="shield-badge">🛡️ <span id="eShield">0</span></span>
         </div>
-        <div class="bar-wrap">
-          <div id="enemy-hp-bar" class="hp-fill" style="width: 100%; background: linear-gradient(90deg, #ef4444, #b91c1c);"></div>
-        </div>
-        <div style="font-size: 10px; display:flex; justify-content:space-between;">
-          <span>HP</span>
-          <span><span id="enemy-hp">140</span>/140</span>
+        <div class="bar-bg">
+          <div id="eHpBar" class="bar-fill hp-enemy" style="width: 100%;"></div>
+          <div class="bar-text" id="eHpText">140 / 140</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 下方操作區與手牌 -->
-  <div class="bottom-zone">
-    <div class="hud-controls">
-      <div class="ap-orb">
-        <span class="ap-num" id="ap-count">3/3</span>
-        <span class="ap-sub">AP</span>
+  <!-- 底部手牌區 -->
+  <div class="bottom-area">
+    <div class="player-stats">
+      <div class="ap-container">
+        <span>⚡ AP:</span>
+        <span id="apText">3 / 3</span>
       </div>
-
-      <div style="font-size: 13px; color: #cbd5e1;">
-        牌庫: <span id="draw-pile-count" style="color:#38bdf8; font-weight:bold;">0</span> 張 | 
-        棄牌: <span id="discard-pile-count" style="color:#cbd5e1; font-weight:bold;">0</span> 張
-      </div>
-
-      <button class="end-turn-btn" onclick="playerEndTurn()">結束回合</button>
+      <div class="deck-info" id="deckInfo">抽牌堆: 0 | 棄牌堆: 0</div>
     </div>
 
-    <!-- 卡牌手牌列 -->
-    <div class="hand-container" id="hand"></div>
+    <!-- 卡牌容器 -->
+    <div class="hand-area" id="handContainer"></div>
+
+    <div class="end-turn-wrap">
+      <button class="end-turn-btn" onclick="endTurn()">結束回合</button>
+    </div>
   </div>
-</div>
 
-<script>
-  // 遊戲數值狀態
-  const state = {
-    turn: 1,
-    ap: 3,
-    maxAp: 3,
-    player: { hp: 80, maxHp: 80, shield: 0, charge: 0 },
-    enemy: { name: "提亞瑪特", hp: 140, maxHp: 140, shield: 0, patternIndex: 0 },
-    summonReady: true,
-    deck: [],
-    hand: [],
-    discard: []
-  };
+  <script>
+    // 遊戲狀態
+    const state = {
+      player: { hp: 80, maxHp: 80, shield: 0, ap: 3, maxAp: 3, charge: 0 },
+      enemy: { hp: 140, maxHp: 140, shield: 0, intent: { type: 'atk', val: 12 } },
+      deck: [],
+      hand: [],
+      discard: [],
+      summonReady: true
+    };
 
-  // 卡牌美術圖形庫 (SVG 內聯圖形，防破圖)
-  const cardArts = {
-    fireSlash: `
-      <svg viewBox="0 0 100 60">
-        <path d="M10 50 Q50 10 90 20 Q50 35 10 50 Z" fill="#ef4444"/>
-        <path d="M25 45 Q50 20 80 25" stroke="#fef08a" stroke-width="4" fill="none"/>
-      </svg>`,
-    shield: `
-      <svg viewBox="0 0 100 60">
-        <polygon points="50,5 80,15 70,50 50,60 30,50 20,15" fill="#3b82f6"/>
-        <polygon points="50,12 72,20 65,45 50,52 35,45 28,20" fill="#93c5fd"/>
-      </svg>`,
-    focus: `
-      <svg viewBox="0 0 100 60">
-        <circle cx="50" cy="30" r="20" fill="none" stroke="#f59e0b" stroke-width="4"/>
-        <circle cx="50" cy="30" r="10" fill="#fbbf24"/>
-        <line x1="50" y1="5" x2="50" y2="55" stroke="#fef08a" stroke-width="2"/>
-        <line x1="25" y1="30" x2="75" y2="30" stroke="#fef08a" stroke-width="2"/>
-      </svg>`,
-    ougi: `
-      <svg viewBox="0 0 100 60">
-        <polygon points="50,5 60,25 85,25 65,38 72,60 50,45 28,60 35,38 15,25 40,25" fill="#fbbf24"/>
-        <circle cx="50" cy="30" r="18" fill="#ef4444" opacity="0.6"/>
-      </svg>`
-  };
-
-  // 卡牌字典庫
-  const CARD_DATABASE = [
-    { id: 'c1', name: '紅蓮斬', cost: 1, type: 'atk', val: 9, charge: 10, elem: 'FIRE', art: 'fireSlash', desc: '造成 9 點傷害<br>+10% 奧義值' },
-    { id: 'c2', name: '炎盾結界', cost: 1, type: 'def', val: 8, charge: 10, elem: 'FIRE', art: 'shield', desc: '獲得 8 點護盾<br>+10% 奧義值' },
-    { id: 'c3', name: '心眼蓄力', cost: 0, type: 'charge', val: 30, charge: 30, elem: 'NONE', art: 'focus', desc: '瞬發專注<br>獲得 +30% 奧義' },
-    { id: 'c4', name: '紅蓮斬', cost: 1, type: 'atk', val: 9, charge: 10, elem: 'FIRE', art: 'fireSlash', desc: '造成 9 點傷害<br>+10% 奧義值' },
-    { id: 'c5', name: '炎盾結界', cost: 1, type: 'def', val: 8, charge: 10, elem: 'FIRE', art: 'shield', desc: '獲得 8 點護盾<br>+10% 奧義值' },
-    { id: 'c6', name: '心眼蓄力', cost: 0, type: 'charge', val: 30, charge: 30, elem: 'NONE', art: 'focus', desc: '瞬發專注<br>獲得 +30% 奧義' },
-    { id: 'c7', name: '疾風之刃', cost: 1, type: 'atk', val: 12, charge: 15, elem: 'WIND', art: 'fireSlash', desc: '造成 12 點傷害<br>+15% 奧義值' }
-  ];
-
-  // 敵人行動輪迴 AI
-  const enemyPatterns = [
-    { type: 'atk', val: 12, text: '⚔️ 意圖: 攻擊 12 點' },
-    { type: 'def', val: 14, text: '🛡️ 意圖: 防禦 14 點' },
-    { type: 'atk', val: 18, text: '🔥 意圖: 重擊 18 點' }
-  ];
-
-  function initBattle() {
-    state.deck = [...CARD_DATABASE].sort(() => Math.random() - 0.5);
-    state.hand = [];
-    state.discard = [];
-    drawCards(4);
-    updateUI();
-  }
-
-  function drawCards(num) {
-    for (let i = 0; i < num; i++) {
-      if (state.deck.length === 0) {
-        if (state.discard.length === 0) break;
-        state.deck = state.discard.sort(() => Math.random() - 0.5);
-        state.discard = [];
-      }
-      state.hand.push(state.deck.pop());
-    }
-    renderHand();
-  }
-
-  function renderHand() {
-    const handBox = document.getElementById('hand');
-    handBox.innerHTML = '';
-
-    // 如果奧義滿 100%，手牌自動置入【奧義大招卡】
-    if (state.player.charge >= 100) {
-      const ougiCard = {
-        name: '無想十天掌 (奧義)',
+    // 豪華卡牌資料庫（包含高精緻立繪縮圖）
+    const cardTemplates = [
+      {
+        id: 'c1',
+        name: '烈焰斬擊',
+        cost: 1,
+        attr: 'fire',
+        attrName: 'FIRE',
+        desc: '造成 10 點傷害\n+15% 奧義',
+        img: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?w=300&q=80',
+        action: () => {
+          dealDamageToEnemy(10);
+          addCharge(15);
+        }
+      },
+      {
+        id: 'c2',
+        name: '炎盾結界',
+        cost: 1,
+        attr: 'fire',
+        attrName: 'FIRE',
+        desc: '獲得 9 點護盾\n+10% 奧義',
+        img: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=300&q=80',
+        action: () => {
+          state.player.shield += 9;
+          addCharge(10);
+        }
+      },
+      {
+        id: 'c3',
+        name: '心眼蓄力',
         cost: 0,
-        type: 'ougi',
-        val: 38,
-        elem: 'LIGHT',
-        art: 'ougi',
-        desc: '★ 滿破奧義爆發<br>造成 38 點特大傷害！'
-      };
-      const cardEl = createCardElement(ougiCard, -1, true);
-      handBox.appendChild(cardEl);
-    }
-
-    state.hand.forEach((card, idx) => {
-      handBox.appendChild(createCardElement(card, idx, false));
-    });
-  }
-
-  function createCardElement(card, index, isOugi) {
-    const cardEl = document.createElement('div');
-    cardEl.className = `card ${isOugi ? 'charge-card' : ''}`;
-    cardEl.innerHTML = `
-      <div class="card-cost" style="${isOugi ? 'background:#eab308; color:#000;' : ''}">${card.cost}</div>
-      <div class="card-art-box">${cardArts[card.art] || cardArts.fireSlash}</div>
-      <div class="card-title">${card.name}</div>
-      <div class="card-desc">${card.desc}</div>
-      <div class="card-element">${card.elem}</div>
-    `;
-
-    cardEl.onclick = () => playCard(card, index, isOugi);
-    return cardEl;
-  }
-
-  function playCard(card, index, isOugi) {
-    if (state.ap < card.cost) {
-      showBanner("❌ AP 行動點數不足！");
-      return;
-    }
-
-    state.ap -= card.cost;
-
-    if (isOugi) {
-      // 奧義施放
-      dealDamage(card.val, 'enemy');
-      state.player.charge = 0;
-      showBanner("💥 姬塔釋放奧義【無想十天掌】！造成全額爆發！");
-    } else {
-      if (card.type === 'atk') {
-        dealDamage(card.val, 'enemy');
-      } else if (card.type === 'def') {
-        state.player.shield += card.val;
-        showBanner(`🛡️ 展開防護！獲得 ${card.val} 點護盾`);
-      } else if (card.type === 'charge') {
-        showBanner(`✨ 蓄力充填！奧義槽增加 ${card.val}%`);
+        attr: 'none',
+        attrName: 'NONE',
+        desc: '獲得 +35% 奧義\n摸 1 張牌',
+        img: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300&q=80',
+        action: () => {
+          addCharge(35);
+          drawCard(1);
+        }
+      },
+      {
+        id: 'c4',
+        name: '颶風掃擊',
+        cost: 2,
+        attr: 'wind',
+        attrName: 'WIND',
+        desc: '造成 18 點傷害\n敵方破甲',
+        img: 'https://images.unsplash.com/photo-1527489377706-5bf97e608852?w=300&q=80',
+        action: () => {
+          dealDamageToEnemy(18);
+          state.enemy.shield = Math.max(0, state.enemy.shield - 5);
+        }
       }
+    ];
 
-      state.player.charge = Math.min(100, state.player.charge + (card.charge || 0));
-      state.discard.push(state.hand.splice(index, 1)[0]);
+    function initGame() {
+      // 構建初始 10 張套牌
+      state.deck = [
+        { ...cardTemplates[0] }, { ...cardTemplates[0] },
+        { ...cardTemplates[1] }, { ...cardTemplates[1] },
+        { ...cardTemplates[2] }, { ...cardTemplates[2] },
+        { ...cardTemplates[3] }, { ...cardTemplates[0] }
+      ];
+      shuffle(state.deck);
+      startTurn();
     }
 
-    checkWin();
-    renderHand();
-    updateUI();
-  }
-
-  function dealDamage(amount, target) {
-    let targetObj = target === 'enemy' ? state.enemy : state.player;
-    let targetZone = document.getElementById(target === 'enemy' ? 'enemy-zone' : 'player-zone');
-
-    // 護盾抵消計算
-    let actualDmg = amount;
-    if (targetObj.shield > 0) {
-      if (targetObj.shield >= actualDmg) {
-        targetObj.shield -= actualDmg;
-        actualDmg = 0;
-      } else {
-        actualDmg -= targetObj.shield;
-        targetObj.shield = 0;
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
       }
     }
 
-    targetObj.hp = Math.max(0, targetObj.hp - actualDmg);
-
-    // 跳出飄字傷害數字
-    const popup = document.createElement('div');
-    popup.className = 'dmg-popup';
-    popup.innerText = `-${amount}`;
-    popup.style.left = '40%';
-    popup.style.top = '30%';
-    targetZone.appendChild(popup);
-    setTimeout(() => popup.remove(), 800);
-  }
-
-  // 巴哈姆特召喚
-  function triggerSummon() {
-    if (!state.summonReady) return;
-    state.summonReady = false;
-    dealDamage(25, 'enemy');
-    state.ap = Math.min(state.maxAp, state.ap + 2);
-    showBanner("🐉 召喚【巴哈姆特】大禍破壞！造成 25 點傷害並恢復 2 點 AP！");
-    document.getElementById('summon-btn').disabled = true;
-    document.getElementById('summon-status').innerText = "已使用 (每戰限1次)";
-    checkWin();
-    updateUI();
-  }
-
-  // 玩家結束回合
-  function playerEndTurn() {
-    // 棄掉剩餘所有手牌
-    state.discard.push(...state.hand);
-    state.hand = [];
-    renderHand();
-
-    showBanner("敵人回合行動中...");
-
-    // 敵人行動
-    setTimeout(() => {
-      const currentPattern = enemyPatterns[state.enemy.patternIndex % enemyPatterns.length];
-      if (currentPattern.type === 'atk') {
-        dealDamage(currentPattern.val, 'player');
-        showBanner(`⚠️ 提亞瑪特發動攻擊，造成 ${currentPattern.val} 點傷害！`);
-      } else if (currentPattern.type === 'def') {
-        state.enemy.shield += currentPattern.val;
-        showBanner(`🛡️ 提亞瑪特凝聚暴風護壁，獲得 ${currentPattern.val} 點護盾！`);
-      }
-
-      state.enemy.patternIndex++;
-      checkLose();
-
-      // 回合結算與重置
-      state.turn++;
-      state.ap = state.maxAp;
-      state.player.shield = 0; // 尖塔機制：玩家每回合護盾重置
-      drawCards(4);
+    function startTurn() {
+      state.player.ap = state.player.maxAp;
+      state.player.shield = 0;
+      decideEnemyIntent();
+      drawCard(4);
       updateUI();
-    }, 700);
-  }
-
-  function checkWin() {
-    if (state.enemy.hp <= 0) {
-      alert("🎉 戰鬥勝利！你成功擊敗了星晶獸提亞瑪特！");
-      location.reload();
     }
-  }
 
-  function checkLose() {
-    if (state.player.hp <= 0) {
-      alert("💀 戰鬥失敗... 騎空團全滅！重新挑戰！");
-      location.reload();
+    function drawCard(num) {
+      for (let i = 0; i < num; i++) {
+        if (state.deck.length === 0) {
+          if (state.discard.length === 0) break;
+          state.deck = [...state.discard];
+          state.discard = [];
+          shuffle(state.deck);
+        }
+        if (state.deck.length > 0) {
+          state.hand.push(state.deck.pop());
+        }
+      }
+      renderHand();
     }
-  }
 
-  function showBanner(msg) {
-    document.getElementById('banner-log').innerHTML = msg;
-  }
+    function renderHand() {
+      const container = document.getElementById('handContainer');
+      container.innerHTML = '';
 
-  function updateUI() {
-    document.getElementById('turn-counter').innerText = state.turn;
-    document.getElementById('ap-count').innerText = `${state.ap}/${state.maxAp}`;
-    
-    // 姬塔數值
-    document.getElementById('player-hp').innerText = state.player.hp;
-    document.getElementById('player-hp-bar').style.width = `${(state.player.hp / state.player.maxHp) * 100}%`;
-    document.getElementById('player-shield').innerText = state.player.shield;
-    document.getElementById('player-charge').innerText = state.player.charge;
-    document.getElementById('player-charge-bar').style.width = `${state.player.charge}%`;
+      state.hand.forEach((card, idx) => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card';
+        cardEl.onclick = () => playCard(idx);
 
-    // 敵人數值
-    document.getElementById('enemy-hp').innerText = state.enemy.hp;
-    document.getElementById('enemy-hp-bar').style.width = `${(state.enemy.hp / state.enemy.maxHp) * 100}%`;
-    document.getElementById('enemy-shield').innerText = state.enemy.shield;
+        cardEl.innerHTML = `
+          <div class="card-cost-gem">${card.cost}</div>
+          <div class="card-art-box">
+            <img src="${card.img}" alt="${card.name}">
+          </div>
+          <div class="card-body">
+            <div class="card-name">${card.name}</div>
+            <div class="card-desc">${card.desc.replace('\n', '<br>')}</div>
+            <div class="card-attr attr-${card.attr}">${card.attrName}</div>
+          </div>
+        `;
+        container.appendChild(cardEl);
+      });
+      updateUI();
+    }
 
-    // 下一回合敵方意圖
-    const nextIntent = enemyPatterns[state.enemy.patternIndex % enemyPatterns.length];
-    document.getElementById('enemy-intent').innerText = nextIntent.text;
+    function playCard(index) {
+      const card = state.hand[index];
+      if (state.player.ap < card.cost) {
+        setMsg("AP 不足！無法釋放技能！");
+        return;
+      }
+      state.player.ap -= card.cost;
+      card.action();
+      state.discard.push(state.hand.splice(index, 1)[0]);
+      renderHand();
+      updateUI();
+    }
 
-    // 牌庫狀態
-    document.getElementById('draw-pile-count').innerText = state.deck.length;
-    document.getElementById('discard-pile-count').innerText = state.discard.length;
-  }
+    function dealDamageToEnemy(dmg) {
+      let remain = dmg;
+      if (state.enemy.shield > 0) {
+        if (state.enemy.shield >= remain) {
+          state.enemy.shield -= remain;
+          remain = 0;
+        } else {
+          remain -= state.enemy.shield;
+          state.enemy.shield = 0;
+        }
+      }
+      state.enemy.hp = Math.max(0, state.enemy.hp - remain);
+      triggerShake('enemyImg');
+      if (state.enemy.hp === 0) {
+        setTimeout(() => alert("🎉 討伐成功！你守護了空之世界！"), 100);
+      }
+    }
 
-  // 啟動遊戲
-  initBattle();
-</script>
+    function addCharge(val) {
+      state.player.charge = Math.min(100, state.player.charge + val);
+      if (state.player.charge >= 100) {
+        setMsg("✨ 奧義滿載！下一回合或特定攻擊將引發全彈連攜！");
+      }
+    }
 
+    function decideEnemyIntent() {
+      const roll = Math.random();
+      if (roll < 0.6) {
+        const dmg = Math.floor(Math.random() * 6) + 10;
+        state.enemy.intent = { type: 'atk', val: dmg, text: `意圖: 攻擊 ${dmg}` };
+      } else {
+        const def = Math.floor(Math.random() * 6) + 8;
+        state.enemy.intent = { type: 'def', val: def, text: `意圖: 防禦 ${def}` };
+      }
+      document.getElementById('enemyIntent').innerText = state.enemy.intent.text;
+    }
+
+    function endTurn() {
+      // 棄置手牌
+      state.discard.push(...state.hand);
+      state.hand = [];
+
+      // 敵人行動
+      if (state.enemy.intent.type === 'atk') {
+        let dmg = state.enemy.intent.val;
+        if (state.player.shield > 0) {
+          if (state.player.shield >= dmg) {
+            state.player.shield -= dmg;
+            dmg = 0;
+          } else {
+            dmg -= state.player.shield;
+            state.player.shield = 0;
+          }
+        }
+        state.player.hp = Math.max(0, state.player.hp - dmg);
+        triggerShake('playerImg');
+      } else {
+        state.enemy.shield += state.enemy.intent.val;
+      }
+
+      if (state.player.hp <= 0) {
+        setTimeout(() => alert("💀 戰敗... 全員撤退！"), 100);
+        return;
+      }
+
+      startTurn();
+    }
+
+    function useSummon() {
+      if (!state.summonReady) return;
+      state.player.ap += 2;
+      dealDamageToEnemy(15);
+      state.summonReady = false;
+      document.getElementById('summonBtn').disabled = true;
+      document.getElementById('summonStatus').innerText = "USED (冷卻中)";
+      setMsg("🌌 召喚巴哈姆特！破滅天罰降臨，獲得 2 點 AP！");
+      updateUI();
+    }
+
+    function triggerShake(id) {
+      const el = document.getElementById(id);
+      el.classList.remove('shake');
+      void el.offsetWidth;
+      el.classList.add('shake');
+    }
+
+    function setMsg(txt) {
+      document.getElementById('battleMsg').innerText = txt;
+    }
+
+    function updateUI() {
+      document.getElementById('pHpBar').style.width = (state.player.hp / state.player.maxHp * 100) + '%';
+      document.getElementById('pHpText').innerText = `${state.player.hp} / ${state.player.maxHp}`;
+      document.getElementById('pShield').innerText = state.player.shield;
+
+      document.getElementById('pChargeBar').style.width = state.player.charge + '%';
+      document.getElementById('pChargeText').innerText = `奧義 ${state.player.charge}%`;
+
+      document.getElementById('eHpBar').style.width = (state.enemy.hp / state.enemy.maxHp * 100) + '%';
+      document.getElementById('eHpText').innerText = `${state.enemy.hp} / ${state.enemy.maxHp}`;
+      document.getElementById('eShield').innerText = state.enemy.shield;
+
+      document.getElementById('apText').innerText = `${state.player.ap} / ${state.player.maxAp}`;
+      document.getElementById('deckInfo').innerText = `抽牌堆: ${state.deck.length} | 棄牌堆: ${state.discard.length}`;
+    }
+
+    window.onload = initGame;
+  </script>
 </body>
 </html>
