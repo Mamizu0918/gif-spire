@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GBF x 殺戮尖塔：空之塔戰記</title>
+    <title>GBF x 殺戮尖塔：空之塔戰記 (美術加強版)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: radial-gradient(circle at center, #1e2638 0%, #0d111a 100%);
+            background: #000;
             color: #fff;
             height: 100vh;
             display: flex;
@@ -16,101 +16,166 @@
             overflow: hidden;
         }
 
-        /* 戰鬥舞台 */
+        /* 遊戲背景：格蘭賽法號甲板與空之雲海 */
         #arena {
             flex: 1;
             display: flex;
-            justify-content: space-around;
-            align-items: center;
+            justify-content: space-between;
+            align-items: flex-end;
             position: relative;
-            padding: 20px;
+            padding: 40px 100px;
+            background: linear-gradient(to bottom, rgba(10, 20, 40, 0.4), rgba(0, 5, 15, 0.85)),
+                        url('https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1600&auto=format&fit=crop') center/cover no-repeat;
+            box-shadow: inset 0 -20px 50px rgba(0,0,0,0.9);
         }
 
+        /* 戰鬥角色容器 */
         .fighter {
             display: flex;
             flex-direction: column;
             align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            padding: 20px;
-            width: 260px;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             position: relative;
+            z-index: 2;
+            transition: transform 0.2s;
         }
 
-        .avatar {
-            font-size: 64px;
-            margin-bottom: 10px;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+        /* 立繪圖片樣式 */
+        .stand-art {
+            height: 380px;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.7));
+            transition: transform 0.2s, filter 0.2s;
         }
 
+        /* 受傷震動與泛紅動畫 */
+        .damaged {
+            animation: shake 0.4s ease-in-out;
+            filter: drop-shadow(0 0 25px #ff2a2a) brightness(1.4) !important;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-15px) rotate(-3deg); }
+            40% { transform: translateX(15px) rotate(3deg); }
+            60% { transform: translateX(-10px); }
+            80% { transform: translateX(10px); }
+        }
+
+        /* 角色資訊欄位 (HP、盾牌、名字) */
+        .status-box {
+            background: rgba(16, 24, 38, 0.85);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 8px;
+            padding: 10px 15px;
+            width: 220px;
+            margin-top: 10px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+        }
+
+        .name-tag {
+            font-size: 15px;
+            font-weight: bold;
+            color: #f1c40f;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* 敵人意圖標籤 */
         .intent-box {
             position: absolute;
-            top: -35px;
-            background: #e74c3c;
+            top: -45px;
+            background: rgba(192, 57, 43, 0.9);
+            border: 1px solid #ff7979;
             color: #fff;
-            padding: 4px 12px;
+            padding: 6px 14px;
             border-radius: 20px;
             font-size: 13px;
             font-weight: bold;
-            box-shadow: 0 0 10px rgba(231,76,60,0.8);
+            box-shadow: 0 0 15px rgba(231,76,60,0.8);
+            animation: bounce 2s infinite ease-in-out;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
         }
 
-        /* 條狀計量表 */
-        .bar-container { width: 100%; margin: 6px 0; }
-        .bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px; }
+        /* 血條與奧義計量表 */
+        .bar-container { width: 100%; margin-top: 5px; }
+        .bar-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px; }
         .bar {
-            width: 100%; height: 12px; background: #333; border-radius: 6px; overflow: hidden;
+            width: 100%; height: 10px; background: #222; border-radius: 5px; overflow: hidden;
+            border: 1px solid #444;
         }
-        .hp-fill { height: 100%; background: #2ecc71; width: 100%; transition: width 0.3s; }
-        .charge-fill { height: 100%; background: #f39c12; width: 0%; transition: width 0.3s; }
-        .block-text { color: #3498db; font-weight: bold; font-size: 14px; margin-top: 4px; }
+        .hp-fill { height: 100%; background: linear-gradient(90deg, #27ae60, #2ecc71); width: 100%; transition: width 0.3s; }
+        .charge-fill { height: 100%; background: linear-gradient(90deg, #f39c12, #f1c40f); width: 0%; transition: width 0.3s; }
+        
+        /* 奧義滿 100% 特效 */
+        .charge-full {
+            box-shadow: 0 0 10px #f1c40f, 0 0 20px #e67e22;
+            animation: pulse-glow 1s infinite alternate;
+        }
+        @keyframes pulse-glow {
+            0% { filter: brightness(1); }
+            100% { filter: brightness(1.5); }
+        }
 
-        /* 中央戰鬥訊息與 Chain Burst 提示 */
+        /* 中央戰況即時廣播 */
         #msg-log {
             position: absolute;
-            top: 20px;
-            font-size: 18px;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
             font-weight: bold;
-            color: #f1c40f;
-            text-shadow: 0 2px 4px #000;
-            text-align: center;
+            color: #fff;
+            text-shadow: 0 0 10px #f39c12, 0 2px 5px #000;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 30px;
+            border-radius: 30px;
+            border: 1px solid rgba(241, 196, 15, 0.4);
         }
 
-        /* 召喚石區塊 */
+        /* 召喚石按鈕 (附巴哈姆特立繪縮圖) */
         #summon-area {
             position: absolute;
-            left: 20px;
-            bottom: 240px;
-        }
-        .summon-btn {
-            background: linear-gradient(135deg, #4b134f, #c94b4b);
-            border: 2px solid #e056fd;
-            color: #fff;
-            padding: 12px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 0 15px rgba(224, 86, 253, 0.5);
-            transition: transform 0.2s;
-        }
-        .summon-btn:disabled {
-            background: #555;
-            border-color: #777;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        /* 玩家操作列與手牌 */
-        #control-panel {
-            background: rgba(10, 15, 25, 0.95);
-            border-top: 2px solid #34495e;
-            height: 230px;
+            left: 30px;
+            top: 30px;
             display: flex;
             flex-direction: column;
-            padding: 10px 20px;
+            gap: 10px;
+        }
+        .summon-btn {
+            background: linear-gradient(135deg, #1f0d2b, #4a154b);
+            border: 2px solid #9b59b6;
+            color: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 200px;
+            box-shadow: 0 0 15px rgba(155, 89, 182, 0.4);
+            transition: all 0.2s;
+        }
+        .summon-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            border-color: #e056fd;
+            box-shadow: 0 0 20px rgba(224, 86, 253, 0.8);
+        }
+        .summon-btn:disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
+        .summon-thumb { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; }
+
+        /* 下方操作與手牌區 */
+        #control-panel {
+            background: linear-gradient(to top, #0b0f19 80%, rgba(11, 15, 25, 0.95));
+            border-top: 2px solid #2980b9;
+            height: 240px;
+            display: flex;
+            flex-direction: column;
+            padding: 10px 30px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
         }
 
         #stats-bar {
@@ -118,125 +183,178 @@
             justify-content: space-between;
             align-items: center;
             font-size: 15px;
-            margin-bottom: 10px;
         }
-        .ap-badge {
-            background: #e67e22;
-            padding: 4px 12px;
-            border-radius: 12px;
+        .ap-gem {
+            display: inline-flex;
+            align-items: center;
+            background: linear-gradient(135deg, #d35400, #e67e22);
+            padding: 4px 15px;
+            border-radius: 15px;
             font-weight: bold;
+            box-shadow: 0 0 10px rgba(230, 126, 34, 0.6);
         }
 
         #hand-area {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 20px;
             flex: 1;
             align-items: center;
         }
 
-        /* 卡牌樣式 */
+        /* 尖塔卡牌本體 */
         .card {
-            width: 120px;
-            height: 160px;
-            background: #2c3e50;
-            border-radius: 8px;
-            border: 2px solid #7f8c8d;
+            width: 140px;
+            height: 190px;
+            background: #1c2331;
+            border-radius: 10px;
+            border: 2px solid #576574;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 8px;
+            padding: 10px;
             cursor: pointer;
-            transition: transform 0.2s, border-color 0.2s;
+            transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
             position: relative;
+            background-size: cover;
+            background-position: center;
         }
         .card:hover {
-            transform: translateY(-15px) scale(1.05);
-            border-color: #f1c40f;
-            z-index: 10;
+            transform: translateY(-25px) scale(1.08);
+            z-index: 100;
         }
-        .card.fire { border-color: #e74c3c; background: #3d1c1c; }
-        .card.water { border-color: #3498db; background: #1c2a3d; }
+        .card.fire {
+            border-color: #ff5252;
+            box-shadow: 0 0 10px rgba(255, 82, 82, 0.3);
+            background: linear-gradient(180deg, rgba(60,20,20,0.9), rgba(20,10,10,0.95));
+        }
+        .card.water {
+            border-color: #40a9ff;
+            box-shadow: 0 0 10px rgba(64, 169, 255, 0.3);
+            background: linear-gradient(180deg, rgba(20,35,60,0.9), rgba(10,15,25,0.95));
+        }
         .card.ougi {
-            border-color: #f1c40f;
-            background: linear-gradient(135deg, #4a3b00, #801313);
-            box-shadow: 0 0 15px #f1c40f;
+            border-color: #ffd700;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
+            background: linear-gradient(180deg, rgba(70,45,0,0.95), rgba(30,10,0,0.95));
+            animation: pulse-glow 1s infinite alternate;
         }
+
         .card-cost {
             position: absolute;
-            top: -8px;
-            left: -8px;
-            background: #e67e22;
+            top: -10px;
+            left: -10px;
+            background: radial-gradient(circle, #f39c12, #d35400);
+            border: 2px solid #fff;
             color: #fff;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            text-align: center;
-            line-height: 24px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.6);
         }
-        .card-title { font-weight: bold; font-size: 13px; text-align: center; }
-        .card-desc { font-size: 11px; color: #bdc3c7; text-align: center; }
+        .card-title { font-weight: bold; font-size: 14px; text-align: center; color: #ecf0f1; }
+        .card-desc { font-size: 12px; color: #bdc3c7; text-align: center; line-height: 1.3; }
 
         .end-turn-btn {
-            background: #27ae60;
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
             color: #fff;
             border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
+            padding: 8px 20px;
+            border-radius: 20px;
             font-weight: bold;
+            font-size: 14px;
             cursor: pointer;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+            transition: all 0.2s;
+        }
+        .end-turn-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+        /* 奧義全螢幕閃光效果 */
+        #screen-flash {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 999;
+            transition: opacity 0.4s ease-out;
         }
     </style>
 </head>
 <body>
 
+    <div id="screen-flash"></div>
+
     <div id="arena">
-        <div id="msg-log">戰鬥開始！擊敗星晶獸！</div>
+        <div id="msg-log">準備戰鬥！擊退襲來的星晶獸！</div>
 
-        <!-- 召喚石 -->
+        <!-- 召喚石系統 -->
         <div id="summon-area">
-            <button id="summon-btn" class="summon-btn" onclick="useSummon()">召喚：巴哈姆特 (CD: 3)</button>
+            <button id="summon-btn" class="summon-btn" onclick="useSummon()">
+                <img class="summon-thumb" src="https://gbf.wiki/images/thumb/7/7b/Bahamut_A.png/240px-Bahamut_A.png" alt="巴哈姆特" onerror="this.src='https://via.placeholder.com/40'">
+                <div>
+                    <div>召喚：巴哈姆特</div>
+                    <small id="summon-status" style="color: #ecf0f1;">準備就緒</small>
+                </div>
+            </button>
         </div>
 
-        <!-- 玩家 -->
+        <!-- 玩家角色：姬塔 (Djeeta) -->
         <div class="fighter" id="player-box">
-            <div class="avatar">🗡️</div>
-            <h3>姬塔 / 格蘭</h3>
-            <div class="bar-container">
-                <div class="bar-label"><span>HP</span><span id="player-hp-text">80/80</span></div>
-                <div class="bar"><div id="player-hp-bar" class="hp-fill"></div></div>
+            <img class="stand-art" id="player-img" 
+                 src="https://gbf.wiki/images/thumb/a/a9/Fighter_Djeeta_A.png/400px-Fighter_Djeeta_A.png" 
+                 alt="姬塔" onerror="this.src='https://via.placeholder.com/300x380?text=Djeeta'">
+            
+            <div class="status-box">
+                <div class="name-tag">
+                    <span>姬塔 (團長)</span>
+                    <span style="color:#3498db;">🛡️ <span id="player-block">0</span></span>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-label"><span>HP</span><span id="player-hp-text">80/80</span></div>
+                    <div class="bar"><div id="player-hp-bar" class="hp-fill"></div></div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-label"><span>奧義槽 (Charge)</span><span id="player-charge-text" style="color:#f1c40f;">0%</span></div>
+                    <div class="bar"><div id="player-charge-bar" class="charge-fill"></div></div>
+                </div>
             </div>
-            <div class="bar-container">
-                <div class="bar-label"><span>奧義值</span><span id="player-charge-text">0%</span></div>
-                <div class="bar"><div id="player-charge-bar" class="charge-fill"></div></div>
-            </div>
-            <div class="block-text">護盾: <span id="player-block">0</span></div>
         </div>
 
-        <!-- 敵人 -->
+        <!-- 敵人：風之星晶獸 提亞瑪特 (Tiamat) -->
         <div class="fighter" id="enemy-box">
-            <div id="enemy-intent" class="intent-box">意圖: 攻擊 10</div>
-            <div class="avatar">🐉</div>
-            <h3>星晶獸 · 提亞瑪特</h3>
-            <div class="bar-container">
-                <div class="bar-label"><span>HP</span><span id="enemy-hp-text">120/120</span></div>
-                <div class="bar"><div id="enemy-hp-bar" class="hp-fill" style="background:#e74c3c;"></div></div>
+            <div id="enemy-intent" class="intent-box">⚔️ 意圖: 攻擊 10</div>
+            <img class="stand-art" id="enemy-img" 
+                 src="https://gbf.wiki/images/thumb/5/52/Tiamat_A.png/480px-Tiamat_A.png" 
+                 alt="提亞瑪特" onerror="this.src='https://via.placeholder.com/350x380?text=Tiamat'">
+            
+            <div class="status-box">
+                <div class="name-tag">
+                    <span style="color:#e74c3c;">提亞瑪特</span>
+                    <span style="color:#3498db;">🛡️ <span id="enemy-block">0</span></span>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-label"><span>HP</span><span id="enemy-hp-text">140/140</span></div>
+                    <div class="bar"><div id="enemy-hp-bar" class="hp-fill" style="background:#e74c3c;"></div></div>
+                </div>
             </div>
-            <div class="block-text">護盾: <span id="enemy-block">0</span></div>
         </div>
     </div>
 
-    <!-- 玩家操作區 -->
+    <!-- 牌庫操作台 -->
     <div id="control-panel">
         <div id="stats-bar">
             <div>
-                <span class="ap-badge">AP: <span id="player-ap">3</span>/3</span>
-                <span style="margin-left: 15px;">抽牌堆: <span id="deck-count">0</span> | 棄牌堆: <span id="discard-count">0</span></span>
+                <span class="ap-gem">⚡ AP: <span id="player-ap">3</span> / 3</span>
+                <span style="margin-left: 20px; color: #95a5a6;">抽牌堆: <b id="deck-count" style="color:#fff;">0</b> | 棄牌堆: <b id="discard-count" style="color:#fff;">0</b></span>
             </div>
             <div>
-                <span id="chain-burst-indicator" style="color: #e67e22; font-weight: bold; margin-right: 15px;"></span>
+                <span id="chain-burst-indicator" style="color: #f39c12; font-weight: bold; margin-right: 20px;"></span>
                 <button class="end-turn-btn" onclick="endTurn()">結束回合</button>
             </div>
         </div>
@@ -244,28 +362,25 @@
     </div>
 
     <script>
-        // 戰鬥狀態
         const state = {
             player: { maxHp: 80, hp: 80, ap: 3, maxAp: 3, block: 0, charge: 0 },
-            enemy: { maxHp: 120, hp: 120, block: 0, nextAction: 'attack', nextVal: 10 },
+            enemy: { maxHp: 140, hp: 140, block: 0, nextAction: 'attack', nextVal: 10 },
             deck: [],
             hand: [],
             discard: [],
             summonCd: 0,
-            chainCount: 0, // 本回合連續相同屬性計數
+            chainCount: 0,
             lastElement: null
         };
 
-        // 牌庫範本
         const CARD_TYPES = [
-            { id: 1, name: "紅蓮斬", element: "fire", cost: 1, dmg: 8, block: 0, charge: 15, desc: "火屬性 8 傷，+15% 奧義" },
-            { id: 2, name: "炎之壁", element: "fire", cost: 1, dmg: 0, block: 8, charge: 10, desc: "火屬性 8 盾，+10% 奧義" },
-            { id: 3, name: "激流刺", element: "water", cost: 1, dmg: 7, block: 0, charge: 20, desc: "水屬性 7 傷，+20% 奧義" },
-            { id: 4, name: "水之護符", element: "water", cost: 1, dmg: 0, block: 10, charge: 5, desc: "水屬性 10 盾" },
-            { id: 5, name: "劍氣蓄力", element: "none", cost: 0, dmg: 0, block: 0, charge: 25, desc: "0費 獲得 25% 奧義" }
+            { id: 1, name: "紅蓮劍舞", element: "fire", cost: 1, dmg: 9, block: 0, charge: 15, desc: "火屬性 9 點傷害<br>+15% 奧義值" },
+            { id: 2, name: "炎盾結界", element: "fire", cost: 1, dmg: 0, block: 9, charge: 10, desc: "獲得 9 點護盾<br>+10% 奧義值" },
+            { id: 3, name: "碧藍貫穿", element: "water", cost: 1, dmg: 8, block: 0, charge: 20, desc: "水屬性 8 點傷害<br>+20% 奧義值" },
+            { id: 4, name: "絕對零度", element: "water", cost: 1, dmg: 0, block: 11, charge: 5, desc: "獲得 11 點堅厚護盾" },
+            { id: 5, name: "心眼蓄力", element: "none", cost: 0, dmg: 0, block: 0, charge: 30, desc: "0費 瞬發專注<br>獲得 +30% 奧義值" }
         ];
 
-        // 初始牌庫建構 (10張)
         function initDeck() {
             state.deck = [
                 {...CARD_TYPES[0]}, {...CARD_TYPES[0]}, {...CARD_TYPES[0]},
@@ -285,37 +400,45 @@
         }
 
         function log(msg) {
-            document.getElementById('msg-log').innerText = msg;
+            document.getElementById('msg-log').innerHTML = msg;
         }
 
-        // 開始玩家回合
+        function triggerFlash() {
+            const flash = document.getElementById('screen-flash');
+            flash.style.opacity = '0.7';
+            setTimeout(() => flash.style.opacity = '0', 250);
+        }
+
+        function triggerDamageAnim(elementId) {
+            const el = document.getElementById(elementId);
+            el.classList.add('damaged');
+            setTimeout(() => el.classList.remove('damaged'), 400);
+        }
+
         function startPlayerTurn() {
             state.player.ap = state.player.maxAp;
             state.player.block = 0;
             state.chainCount = 0;
             state.lastElement = null;
 
-            // 抽 4 張牌
             drawCards(4);
 
-            // 檢查奧義是否滿 100% -> 給予免費奧義卡
+            // 奧義大招生成判定
             if (state.player.charge >= 100) {
                 state.hand.push({
                     id: 99,
-                    name: "【奧義】極致斬擊",
+                    name: "【奧義】星之破滅",
                     element: "ougi",
                     cost: 0,
-                    dmg: 35,
+                    dmg: 40,
                     block: 0,
                     charge: 0,
-                    desc: "消耗 100% 奧義造成 35 點爆發傷害！"
+                    desc: "<b style='color:#ffd700'>消耗100%奧義</b><br>造成 40 點毀滅打擊！"
                 });
-                log("奧義已滿！釋放奧義之刻已到！");
+                log("✨ <span style='color:#f1c40f'>奧義槽已滿！可釋放【奧義・星之破滅】！</span>");
             }
 
-            // 更新召喚石 CD
             if (state.summonCd > 0) state.summonCd--;
-
             decideEnemyIntent();
             updateUI();
         }
@@ -332,42 +455,43 @@
             }
         }
 
-        // 打出卡牌
         function playCard(index) {
             const card = state.hand[index];
             if (state.player.ap < card.cost) {
-                log("AP 不足！無法出牌！");
+                log("<span style='color:#e74c3c'>AP不足，無法出牌！</span>");
                 return;
             }
 
             state.player.ap -= card.cost;
 
-            // 傷害結算
-            if (card.dmg > 0) {
-                dealDamageToEnemy(card.dmg);
-            }
-
-            // 護盾結算
-            if (card.block > 0) {
-                state.player.block += card.block;
-            }
-
-            // 奧義值處理
+            // 奧義特效
             if (card.element === 'ougi') {
+                triggerFlash();
                 state.player.charge = 0;
             } else {
                 state.player.charge = Math.min(100, state.player.charge + card.charge);
             }
 
-            // 碧藍幻想特色：屬性 Chain Burst 連段判定
+            // 傷害與受傷動效
+            if (card.dmg > 0) {
+                dealDamageToEnemy(card.dmg);
+                triggerDamageAnim('enemy-img');
+            }
+
+            if (card.block > 0) {
+                state.player.block += card.block;
+            }
+
+            // Chain Burst 連段機制
             if (card.element !== 'none' && card.element !== 'ougi') {
                 if (state.lastElement === card.element) {
                     state.chainCount++;
                     if (state.chainCount >= 2) {
-                        const burstDmg = 12;
-                        log(`觸發 【Chain Burst: ${card.element.toUpperCase()}】！追擊 ${burstDmg} 點傷害！`);
+                        const burstDmg = 14;
+                        log(`⚡ 觸發連鎖爆發 <span style='color:#e67e22'>【Chain Burst: ${card.element.toUpperCase()}】</span>！追加 ${burstDmg} 點傷害！`);
                         dealDamageToEnemy(burstDmg);
-                        state.chainCount = 0; // 重置
+                        triggerDamageAnim('enemy-img');
+                        state.chainCount = 0;
                     }
                 } else {
                     state.lastElement = card.element;
@@ -375,11 +499,8 @@
                 }
             }
 
-            // 移除手牌並送入棄牌堆（奧義卡用完消失）
             state.hand.splice(index, 1);
-            if (card.element !== 'ougi') {
-                state.discard.push(card);
-            }
+            if (card.element !== 'ougi') state.discard.push(card);
 
             checkVictory();
             updateUI();
@@ -399,30 +520,29 @@
             state.enemy.hp = Math.max(0, state.enemy.hp - remain);
         }
 
-        // 召喚石技能
         function useSummon() {
             if (state.summonCd > 0) return;
-            log("巴哈姆特降臨：終焉之刻！造成 25 點全體穿甲重創，AP+1！");
-            state.enemy.hp = Math.max(0, state.enemy.hp - 25);
-            state.player.ap += 1;
-            state.summonCd = 4; // 進入冷卻
+            triggerFlash();
+            triggerDamageAnim('enemy-img');
+            log("<span style='color:#a29bfe'>巴哈姆特・創世降臨！</span> 全體 28 點傷害，並恢復 1 AP！");
+            dealDamageToEnemy(28);
+            state.player.ap = Math.min(state.player.maxAp, state.player.ap + 1);
+            state.summonCd = 4;
             checkVictory();
             updateUI();
         }
 
-        // 結束回合與敵人 AI 行動
         function endTurn() {
-            // 丟棄手牌
             while (state.hand.length > 0) {
                 const c = state.hand.pop();
                 if (c.element !== 'ougi') state.discard.push(c);
             }
 
-            // 敵人行動
             state.enemy.block = 0;
             setTimeout(() => {
                 if (state.enemy.nextAction === 'attack') {
                     let dmg = state.enemy.nextVal;
+                    triggerDamageAnim('player-img');
                     if (state.player.block >= dmg) {
                         state.player.block -= dmg;
                     } else {
@@ -430,79 +550,83 @@
                         state.player.block = 0;
                         state.player.hp = Math.max(0, state.player.hp - dmg);
                     }
-                    log(`敵人發動攻擊，造成 ${state.enemy.nextVal} 傷害！`);
+                    log(`提亞瑪特呼嘯突襲！造成 ${state.enemy.nextVal} 點傷害！`);
                 } else {
                     state.enemy.block += state.enemy.nextVal;
-                    log(`敵人凝聚風暴壁障，獲得 ${state.enemy.nextVal} 點護盾！`);
+                    log(`提亞瑪特召喚暴風之壁，獲得 ${state.enemy.nextVal} 點護盾！`);
                 }
 
                 if (state.player.hp <= 0) {
-                    alert("騎空團全滅... 戰鬥失敗！");
+                    alert("姬塔倒下了... 騎空團全滅！");
                     location.reload();
                     return;
                 }
 
-                setTimeout(startPlayerTurn, 1000);
+                setTimeout(startPlayerTurn, 900);
                 updateUI();
             }, 600);
         }
 
-        // 決定敵人下一次意圖
         function decideEnemyIntent() {
-            const rand = Math.random();
-            if (rand < 0.65) {
+            if (Math.random() < 0.65) {
                 state.enemy.nextAction = 'attack';
-                state.enemy.nextVal = Math.floor(Math.random() * 6) + 8; // 8~13 傷
+                state.enemy.nextVal = Math.floor(Math.random() * 6) + 9;
             } else {
                 state.enemy.nextAction = 'defend';
-                state.enemy.nextVal = 12; // 12 盾
+                state.enemy.nextVal = 14;
             }
         }
 
         function checkVictory() {
             if (state.enemy.hp <= 0) {
                 setTimeout(() => {
-                    alert("VICTORY!! 成功擊敗星晶獸！");
+                    alert("✨ 討伐成功！擊破星晶獸提亞瑪特！ ✨");
                     location.reload();
-                }, 100);
+                }, 150);
             }
         }
 
-        // 渲染畫面
         function updateUI() {
-            // 玩家狀態
+            // 姬塔數值
             document.getElementById('player-hp-text').innerText = `${state.player.hp}/${state.player.maxHp}`;
             document.getElementById('player-hp-bar').style.width = `${(state.player.hp / state.player.maxHp) * 100}%`;
             document.getElementById('player-charge-text').innerText = `${state.player.charge}%`;
             document.getElementById('player-charge-bar').style.width = `${state.player.charge}%`;
+            
+            // 滿奧義呼吸特效
+            const chargeBar = document.getElementById('player-charge-bar');
+            if (state.player.charge >= 100) chargeBar.classList.add('charge-full');
+            else chargeBar.classList.remove('charge-full');
+
             document.getElementById('player-block').innerText = state.player.block;
             document.getElementById('player-ap').innerText = state.player.ap;
 
-            // 敵人狀態
+            // 提亞瑪特數值
             document.getElementById('enemy-hp-text').innerText = `${state.enemy.hp}/${state.enemy.maxHp}`;
             document.getElementById('enemy-hp-bar').style.width = `${(state.enemy.hp / state.enemy.maxHp) * 100}%`;
             document.getElementById('enemy-block').innerText = state.enemy.block;
             document.getElementById('enemy-intent').innerText = state.enemy.nextAction === 'attack'
-                ? `意圖: 攻擊 ⚔️ ${state.enemy.nextVal}`
-                : `意圖: 防禦 🛡️ ${state.enemy.nextVal}`;
+                ? `⚔️ 意圖: 攻擊 ${state.enemy.nextVal}`
+                : `🛡️ 意圖: 防禦 ${state.enemy.nextVal}`;
 
-            // 牌庫指示
+            // 卡牌堆
             document.getElementById('deck-count').innerText = state.deck.length;
             document.getElementById('discard-count').innerText = state.discard.length;
 
             // 召喚石按鈕
             const summonBtn = document.getElementById('summon-btn');
+            const summonStatus = document.getElementById('summon-status');
             if (state.summonCd > 0) {
-                summonBtn.innerText = `巴哈姆特 (CD: ${state.summonCd})`;
+                summonStatus.innerText = `冷卻中 (CD: ${state.summonCd})`;
                 summonBtn.disabled = true;
             } else {
-                summonBtn.innerText = `召喚：巴哈姆特 (READY)`;
+                summonStatus.innerText = `READY (發動可得AP)`;
                 summonBtn.disabled = false;
             }
 
-            // 連擊提示
+            // Chain Burst 連鎖提示
             const chainText = document.getElementById('chain-burst-indicator');
-            chainText.innerText = state.lastElement ? `連鎖屬性: [${state.lastElement.toUpperCase()}] 連段中` : "";
+            chainText.innerText = state.lastElement ? `連鎖屬性: [${state.lastElement.toUpperCase()}] 蓄力中...` : "";
 
             // 渲染手牌
             const handArea = document.getElementById('hand-area');
@@ -521,7 +645,7 @@
             });
         }
 
-        // 啟動
+        // 啟動遊戲
         initDeck();
         startPlayerTurn();
     </script>
