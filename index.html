@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GBF Slay the Spire Prototype</title>
+    <!-- 繞過防盜連，確保圖片載入正常 -->
+    <meta name="referrer" content="no-referrer">
+    <title>碧藍尖塔 - ハロアズサ參戰</title>
     <style>
         body {
-            background-color: #1a1e24;
+            background: radial-gradient(circle at center, #1e2430 0%, #0d1117 100%);
             color: #f0f0f0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
@@ -15,139 +17,232 @@
             margin: 0;
             padding: 20px;
             user-select: none;
+            min-height: 100vh;
         }
+
+        h2 {
+            margin: 5px 0 20px 0;
+            letter-spacing: 2px;
+            color: #c678dd;
+            text-shadow: 0 0 10px rgba(198, 120, 221, 0.5);
+        }
+
         #battlefield {
             display: flex;
-            justify-content: space-around;
+            justify-content: center;
+            gap: 40px;
             width: 100%;
-            max-width: 800px;
-            margin-top: 20px;
+            max-width: 860px;
         }
+
         .entity {
-            border: 2px solid #555;
-            background: #2a2e39;
-            padding: 20px;
-            border-radius: 10px;
-            width: 200px;
+            border: 2px solid #3b4252;
+            background: rgba(30, 36, 48, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 16px;
+            border-radius: 12px;
+            width: 240px;
             text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+
+        /* 角色頭像/立繪容器 */
+        .portrait-wrapper {
+            width: 125px;
+            height: 125px;
+            border-radius: 50%;
+            border: 3px solid #e5c07b;
+            overflow: hidden;
+            box-shadow: 0 0 14px rgba(229, 192, 123, 0.6);
+            margin-bottom: 12px;
+            background: #111;
+        }
+
+        .portrait-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
         .bar-container {
-            background: #444;
-            height: 14px;
-            border-radius: 7px;
-            margin: 8px 0;
+            background: #2b303c;
+            height: 12px;
+            width: 100%;
+            border-radius: 6px;
+            margin: 6px 0;
             overflow: hidden;
         }
-        .hp-fill { background: #e74c3c; height: 100%; width: 100%; transition: width 0.3s; }
-        .charge-fill { background: #f39c12; height: 100%; width: 0%; transition: width 0.3s; }
+
+        .hp-fill { background: linear-gradient(90deg, #e06c75, #ff4757); height: 100%; width: 100%; transition: width 0.3s; }
+        .charge-fill { background: linear-gradient(90deg, #e5c07b, #ffa502); height: 100%; width: 0%; transition: width 0.3s; }
+
+        .stat-line {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #dcdfe4;
+        }
+
         #log {
             margin: 20px 0;
-            height: 60px;
-            font-size: 15px;
-            color: #ffcc00;
+            height: 40px;
+            font-size: 16px;
+            color: #e5c07b;
             text-align: center;
+            font-weight: 500;
         }
+
         #hand {
             display: flex;
             gap: 15px;
             justify-content: center;
-            margin-top: 20px;
-            min-height: 150px;
+            min-height: 170px;
+            flex-wrap: wrap;
         }
+
         .card {
-            background: #34495e;
-            border: 2px solid #3498db;
-            border-radius: 8px;
+            background: #21252b;
+            border: 2px solid #61afef;
+            border-radius: 10px;
             padding: 12px;
-            width: 120px;
-            height: 160px;
+            width: 125px;
+            height: 165px;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: transform 0.2s, border-color 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
         }
+
         .card:hover {
             transform: translateY(-8px);
-            border-color: #f1c40f;
+            border-color: #ffd700;
+            box-shadow: 0 8px 16px rgba(255, 215, 0, 0.3);
         }
+
         .card.ultimate {
-            background: #4a235a;
-            border-color: #9b59b6;
+            background: #3e2249;
+            border-color: #c678dd;
+            box-shadow: 0 0 10px rgba(198, 120, 221, 0.5);
         }
+
         .card-cost {
+            font-size: 13px;
             font-weight: bold;
-            color: #3498db;
+            color: #61afef;
         }
+
+        .card.ultimate .card-cost { color: #e06c75; }
+
         .card-title {
             font-weight: bold;
-            font-size: 15px;
+            font-size: 14px;
             text-align: center;
         }
+
         .card-desc {
-            font-size: 12px;
-            color: #bdc3c7;
+            font-size: 11px;
+            color: #abb2bf;
+            line-height: 1.4;
         }
+
         button.end-turn {
-            margin-top: 25px;
-            padding: 10px 25px;
-            background: #27ae60;
+            margin-top: 20px;
+            padding: 10px 30px;
+            background: linear-gradient(135deg, #98c379, #2ecc71);
             border: none;
-            color: white;
+            color: #1a1e24;
             font-size: 16px;
-            border-radius: 6px;
+            font-weight: bold;
+            border-radius: 8px;
             cursor: pointer;
+            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
+            transition: filter 0.2s;
         }
-        button.end-turn:hover { background: #2ecc71; }
+
+        button.end-turn:hover {
+            filter: brightness(1.15);
+        }
     </style>
 </head>
 <body>
-    <h2>碧藍尖塔 (Granblue Spire) - Demo</h2>
-    
+
+    <h2>碧藍尖塔 (Granblue Spire)</h2>
+
     <div id="battlefield">
-        <!-- 玩家 -->
+        <!-- 玩家：ハロアズサ -->
         <div class="entity" id="player">
-            <h3>古蘭 (Gran)</h3>
-            <div>生命: <span id="player-hp">50</span>/50</div>
+            <div class="portrait-wrapper">
+                <img src="https://img.gamewith.jp/article_tools/granbluefantasy/gacha/3678hyouka.jpg" alt="ハロアズサ">
+            </div>
+            <h3 style="margin: 0 0 8px 0; color: #e5c07b;">ハロアズサ (Azusa)</h3>
+            
+            <div class="stat-line">
+                <span>生命</span>
+                <span><span id="player-hp">50</span>/50</span>
+            </div>
             <div class="bar-container"><div id="player-hp-bar" class="hp-fill"></div></div>
-            <div>護甲: <span id="player-shield">0</span></div>
-            <div>能量: <span id="player-ap">3</span>/3</div>
-            <div style="margin-top: 10px;">奧義值: <span id="player-charge">0</span>%</div>
+
+            <div class="stat-line" style="margin-top: 4px;">
+                <span>奧義值</span>
+                <span><span id="player-charge">0</span>%</span>
+            </div>
             <div class="bar-container"><div id="player-charge-bar" class="charge-fill"></div></div>
+
+            <div class="stat-line" style="margin-top: 6px;">
+                <span>護甲: <b id="player-shield" style="color: #61afef;">0</b></span>
+                <span>能量 (AP): <b id="player-ap" style="color: #98c379;">3</b>/3</span>
+            </div>
         </div>
 
         <!-- 敵人 -->
         <div class="entity" id="enemy">
-            <h3>原型巴哈姆特</h3>
-            <div>意圖: <span id="enemy-intent" style="color: #e67e22; font-weight: bold;">準備重擊 (10)</span></div>
-            <div style="margin-top: 15px;">生命: <span id="enemy-hp">80</span>/80</div>
+            <div class="portrait-wrapper" style="border-color: #e06c75;">
+                <div style="line-height: 125px; font-size: 40px; background: #222;">🐲</div>
+            </div>
+            <h3 style="margin: 0 0 8px 0; color: #e06c75;">原型巴哈姆特</h3>
+
+            <div style="font-size: 13px; color: #d19a66; margin-bottom: 6px;">
+                意圖: <span id="enemy-intent" style="font-weight: bold;">攻擊 (10)</span>
+            </div>
+
+            <div class="stat-line">
+                <span>生命</span>
+                <span><span id="enemy-hp">80</span>/80</span>
+            </div>
             <div class="bar-container"><div id="enemy-hp-bar" class="hp-fill"></div></div>
-            <div>護甲: <span id="enemy-shield">0</span></div>
+
+            <div class="stat-line" style="margin-top: 6px;">
+                <span>護甲: <b id="enemy-shield" style="color: #61afef;">0</b></span>
+            </div>
         </div>
     </div>
 
-    <div id="log">輪到你的回合！點選卡牌發動攻擊或防禦。</div>
+    <div id="log">輪到ハロアズサ的回合！選擇卡牌展開行動。</div>
     <div id="hand"></div>
     <button class="end-turn" onclick="endTurn()">結束回合</button>
 
     <script>
-        // 遊戲狀態資料
         const state = {
-            turn: 1,
             player: { maxHp: 50, hp: 50, shield: 0, ap: 3, maxAp: 3, charge: 0 },
             enemy: { maxHp: 80, hp: 80, shield: 0, nextDamage: 10 },
+            // ハロアズサ風格卡牌
             deck: [
-                { name: "斬擊", cost: 1, type: "atk", value: 8, charge: 15, desc: "造成 8 傷害，累積 15% 奧義" },
-                { name: "破慘炎舞", cost: 2, type: "atk", value: 18, charge: 25, desc: "造成 18 傷害，累積 25% 奧義" },
-                { name: "全神貫注", cost: 1, type: "def", value: 8, charge: 10, desc: "獲得 8 護甲，累積 10% 奧義" },
-                { name: "聖壁護持", cost: 2, type: "def", value: 16, charge: 15, desc: "獲得 16 護甲，累積 15% 奧義" },
+                { name: "冥界之刃", cost: 1, type: "atk", value: 9, charge: 15, desc: "揮動冥刀，造成 9 傷害，+15% 奧義" },
+                { name: "夜色迷蹤", cost: 1, type: "def", value: 8, charge: 10, desc: "融入夜色，獲得 8 護甲，+10% 奧義" },
+                { name: "百鬼繚亂", cost: 2, type: "atk", value: 20, charge: 25, desc: "重斬群靈，造成 20 傷害，+25% 奧義" },
+                { name: "幽火障壁", cost: 2, type: "def", value: 17, charge: 15, desc: "召喚幽火，獲得 17 護甲，+15% 奧義" },
             ],
             hand: []
         };
 
         function updateUI() {
-            // 更新數值
             document.getElementById('player-hp').innerText = state.player.hp;
             document.getElementById('player-hp-bar').style.width = (state.player.hp / state.player.maxHp * 100) + '%';
             document.getElementById('player-shield').innerText = state.player.shield;
@@ -160,19 +255,17 @@
             document.getElementById('enemy-shield').innerText = state.enemy.shield;
             document.getElementById('enemy-intent').innerText = `攻擊 (${state.enemy.nextDamage})`;
 
-            // 渲染手牌
             const handContainer = document.getElementById('hand');
             handContainer.innerHTML = '';
             
-            // 如果奧義條滿 100，額外加入奧義卡
             let currentCards = [...state.hand];
             if (state.player.charge >= 100) {
                 currentCards.unshift({
-                    name: "【奧義】災厄之破",
+                    name: "【奧義】冥界幽夜斬",
                     cost: 0,
                     type: "ultimate",
-                    value: 35,
-                    desc: "消耗 100% 奧義，造成 35 巨量傷害！"
+                    value: 40,
+                    desc: "消耗 100% 奧義，釋放阿梓的全力幽夜一刀，造成 40 傷害！"
                 });
             }
 
@@ -198,24 +291,23 @@
             state.player.ap -= card.cost;
 
             if (card.type === "atk") {
-                let damage = card.value;
-                applyDamage(state.enemy, damage);
+                applyDamage(state.enemy, card.value);
                 state.player.charge = Math.min(100, state.player.charge + card.charge);
-                document.getElementById('log').innerText = `你使用了 ${card.name}，造成了 ${damage} 點傷害！`;
+                document.getElementById('log').innerText = `ハロアズサ使用了【${card.name}】，造成 ${card.value} 點傷害！`;
                 state.hand.splice(index, 1);
             } else if (card.type === "def") {
                 state.player.shield += card.value;
                 state.player.charge = Math.min(100, state.player.charge + card.charge);
-                document.getElementById('log').innerText = `你使用了 ${card.name}，獲得了 ${card.value} 點護盾！`;
+                document.getElementById('log').innerText = `ハロアズサ使用了【${card.name}】，獲得 ${card.value} 點護甲！`;
                 state.hand.splice(index, 1);
             } else if (card.type === "ultimate") {
                 state.player.charge = 0;
                 applyDamage(state.enemy, card.value);
-                document.getElementById('log').innerText = `奧義釋放！【災厄之破】重創敵人 ${card.value} 點傷害！`;
+                document.getElementById('log').innerText = `奧義釋放！【冥界幽夜斬】直接重創敵人 ${card.value} 點傷害！`;
             }
 
             if (state.enemy.hp <= 0) {
-                alert("勝利！你討伐了原型巴哈姆特！");
+                alert("討伐成功！ハロアズサ擊敗了原型巴哈姆特！");
                 location.reload();
                 return;
             }
@@ -243,27 +335,24 @@
 
         function endTurn() {
             document.getElementById('log').innerText = "敵方行動中...";
-            // 敵人攻擊
             let dmg = state.enemy.nextDamage;
             applyDamage(state.player, dmg);
 
             if (state.player.hp <= 0) {
-                alert("你倒下了... 爬塔結束！");
+                alert("ハロアズサ倒下了... 爬塔結束！");
                 location.reload();
                 return;
             }
 
-            // 新回合重置
             state.player.ap = state.player.maxAp;
             state.player.shield = 0;
             state.enemy.shield = 0;
-            state.enemy.nextDamage = Math.floor(Math.random() * 8) + 8; // 下回合隨機攻擊 8~15
+            state.enemy.nextDamage = Math.floor(Math.random() * 8) + 8;
             drawCards(4);
-            document.getElementById('log').innerText = `敵方對你造成了傷害！輪到你的回合。`;
+            document.getElementById('log').innerText = `敵方造成了 ${dmg} 點傷害！輪到ハロアズサ的回合。`;
             updateUI();
         }
 
-        // 初始化
         drawCards(4);
         updateUI();
     </script>
