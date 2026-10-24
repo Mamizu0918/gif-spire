@@ -1,0 +1,445 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-Hant">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>天空之塔｜星晶卡牌戰鬥</title>
+
+<style>
+
+*{box-sizing:border-box}
+
+:root{--gold:#e8cb8e;--blue:#56c8ff}
+
+body{margin:0;background:#081326;color:#fff;font-family:system-ui,"Noto Sans TC",sans-serif}
+
+button{font:inherit;cursor:pointer}
+
+button:disabled{opacity:.4;cursor:not-allowed}
+
+#game{position:relative;width:min(1500px,100%);height:min(100vh,1000px);min-height:750px;margin:auto;overflow:hidden;background:linear-gradient(#6da9d2 0%,#d4e7ef 43%,#456f91 44%,#142c49 75%,#080f20 100%);border:2px solid #b69b6b}
+
+.sky{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 35%,#fff9,transparent 40%),linear-gradient(120deg,transparent 45%,#fff3 46%,transparent 47%)}
+
+.sky:after{content:"";position:absolute;left:0;right:0;bottom:20%;height:27%;background:linear-gradient(#c2d8e5,#496e8c);clip-path:polygon(0 40%,8% 25%,17% 42%,27% 5%,39% 38%,49% 14%,63% 38%,74% 7%,87% 36%,100% 12%,100% 100%,0 100%)}
+
+.header{position:absolute;z-index:8;top:0;left:0;right:0;height:68px;background:linear-gradient(90deg,#071222f5,#183451ed,#071222f5);border-bottom:2px solid #9e855a;display:flex;align-items:center;justify-content:space-between;padding:8px 18px;gap:10px}
+
+.logo{font-family:Georgia,serif;font-size:clamp(14px,2vw,25px);font-weight:900;color:#f3d89d;text-shadow:0 2px 3px #000;white-space:nowrap}
+
+.logo small{display:block;font:10px system-ui;letter-spacing:3px;color:#b4d6ef;margin-top:3px}
+
+.hud{display:flex;gap:8px;align-items:center;font-size:13px}
+
+.hud span{padding:9px;border:1px solid #8d7855;background:#0a1729d9;border-radius:8px;white-space:nowrap}
+
+#team{position:absolute;z-index:5;left:10px;top:85px;width:160px;display:flex;flex-direction:column;gap:9px}
+
+.member{height:88px;display:flex;align-items:center;gap:6px;background:linear-gradient(110deg,#152b45ee,#416681c9);border:2px solid #9dbbd0;border-radius:7px;overflow:hidden;box-shadow:0 3px 8px #07132688}
+
+.face{width:67px;height:100%;flex-shrink:0;object-fit:cover;object-position:top;background:linear-gradient(140deg,#b5d8e7,#243f63);font-size:40px;text-align:center}
+
+.memberinfo{font-size:11px;min-width:0;padding-right:5px;flex:1}
+
+.memberinfo strong{display:block;color:#ffe7ad;font-size:12px}
+
+.hpbar{height:7px;background:#07111c;border:1px solid #8295a7;margin-top:6px;border-radius:5px;overflow:hidden}
+
+.hpbar i{display:block;height:100%;background:linear-gradient(90deg,#3bbd78,#b5ed9a)}
+
+#dialog{position:absolute;z-index:6;left:190px;top:90px;width:min(440px,42%);min-height:85px;padding:15px 18px;border:2px solid #aa8c5d;border-radius:9px;background:linear-gradient(120deg,#101d31f2,#213c58ef);box-shadow:0 5px 12px #06132255}
+
+#dialog strong{display:block;color:#f3d69a;margin-bottom:7px}
+
+#dialog p{margin:0;font-size:13px;line-height:1.6}
+
+#hero{position:absolute;z-index:3;left:10%;bottom:20%;height:53%;width:35%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 8px 7px #10233a88)}
+
+#boss{position:absolute;z-index:3;right:1%;bottom:19%;height:61%;width:38%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 10px 8px #10233a88)}
+
+.art-fallback{position:absolute;z-index:2;right:7%;bottom:28%;font-size:clamp(100px,17vw,210px);filter:drop-shadow(0 10px 8px #14233a88)}
+
+.enemybox{position:absolute;z-index:6;right:5%;top:95px;width:30%;min-width:200px;max-width:400px;padding:12px;background:#0a1729d9;border:1px solid #a48a5b;border-radius:8px}
+
+.enemytitle{display:flex;justify-content:space-between;font-size:13px;gap:6px}
+
+.enemybar{height:12px;border:1px solid #a9b4bd;background:#07101d;margin-top:8px}
+
+.enemybar i{display:block;height:100%;background:linear-gradient(90deg,#b72e44,#ff817b)}
+
+#intent{font-size:12px;color:#ffcfaa;margin-top:9px}
+
+.bottom{position:absolute;z-index:7;left:0;right:0;bottom:0;min-height:235px;padding:10px 15px 12px;background:linear-gradient(0deg,#07101ffb 0%,#0a1829f5 76%,#0b1a2b00 100%);display:flex;align-items:flex-end;gap:10px}
+
+.side-tools{width:92px;flex-shrink:0;display:flex;flex-direction:column;gap:9px;padding-bottom:8px}
+
+.crystal{width:75px;height:90px;clip-path:polygon(50% 0,90% 22%,100% 70%,50% 100%,0 70%,10% 22%);background:linear-gradient(140deg,#a7efff,#1875bd 65%,#0b294f);border:2px solid white;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;text-shadow:0 2px 4px #123}
+
+.crystal b{font-size:28px}
+
+.crystal small{font-size:11px}
+
+.tool{border:1px solid #728da7;border-radius:6px;background:#162b43;color:#e9f2fa;padding:8px 3px;font-size:11px}
+
+#cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;flex:1;min-width:0;align-items:end}
+
+.card{height:205px;min-width:0;position:relative;overflow:hidden;border:3px solid #78d8f4;border-radius:12px;color:white;background:linear-gradient(150deg,#286d91,#0c1b30);padding:0;box-shadow:0 4px 9px #0009;transition:.15s}
+
+.card.attack{border-color:#ed9a8a;background:linear-gradient(150deg,#8d4245,#251527)}
+
+.card.heal{border-color:#d3a8f0;background:linear-gradient(150deg,#704b8d,#241a3b)}
+
+.card.special{border-color:#ebd08c;background:linear-gradient(150deg,#8d703b,#272138)}
+
+.card:hover:not(:disabled){transform:translateY(-8px);filter:brightness(1.2)}
+
+.card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;opacity:.85;mask-image:linear-gradient(#000 5%,#0009 58%,transparent 100%)}
+
+.card:after{content:"";position:absolute;inset:35% 0 0;background:linear-gradient(transparent,#0a1225 75%)}
+
+.cost{position:absolute;z-index:2;top:5px;left:5px;width:28px;height:28px;border:2px solid white;border-radius:50%;background:linear-gradient(#b9f4ff,#3180bd);color:#07152a;font-weight:900;display:grid;place-items:center}
+
+.cardtext{position:absolute;z-index:3;bottom:0;left:0;right:0;padding:8px 3px;text-align:center}
+
+.cardtext strong{display:block;font-size:12px;color:#ffe4ad;margin-bottom:5px}
+
+.cardtext small{font-size:10px;line-height:1.45}
+
+.endturn{width:115px;height:115px;flex-shrink:0;border:5px double #d9c18a;border-radius:50%;background:radial-gradient(circle at 35% 25%,#5fc9ff,#1761a1 55%,#082344);box-shadow:0 0 18px #49bfff77,inset 0 0 12px #b9edff88;color:white;font-weight:900;font-size:15px}
+
+.endturn:hover{filter:brightness(1.2)}
+
+#toast{position:absolute;z-index:10;left:50%;top:50%;transform:translate(-50%,-50%);padding:15px 25px;background:#091629f5;border:2px solid #e5ca8a;border-radius:10px;text-align:center;display:none;max-width:85%;box-shadow:0 5px 25px #0009}
+
+@media(max-width:700px){
+
+ #game{height:100dvh;min-height:650px}
+
+ .header{height:56px;padding:5px 8px}
+
+ .logo small{font-size:8px;letter-spacing:1px}
+
+ .hud{gap:4px;font-size:10px}.hud span{padding:6px 5px}
+
+ #team{left:5px;top:67px;width:96px;gap:5px}
+
+ .member{height:64px;gap:3px}.face{width:43px;font-size:25px}
+
+ .memberinfo{font-size:9px}.memberinfo strong{font-size:9px}
+
+ #dialog{left:108px;top:67px;width:46%;padding:8px;font-size:10px;min-height:65px}
+
+ #dialog p{font-size:10px}
+
+ .enemybox{top:145px;right:5px;width:45%;min-width:0;padding:8px}
+
+ .enemytitle{font-size:10px}
+
+ #intent{font-size:10px}
+
+ #hero{left:7%;bottom:25%;width:48%;height:39%}
+
+ #boss{right:-5%;bottom:24%;width:55%;height:45%}
+
+ .art-fallback{bottom:31%;right:4%;font-size:100px}
+
+ .bottom{padding:6px;gap:5px;min-height:210px}
+
+ .side-tools{width:43px;gap:5px}
+
+ .crystal{width:40px;height:53px}.crystal b{font-size:18px}.crystal small{font-size:8px}
+
+ .tool{font-size:9px;padding:6px 1px}
+
+ #cards{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+
+ .card{height:140px;border-width:2px;border-radius:6px}
+
+ .cost{width:21px;height:21px;font-size:11px;top:2px;left:2px}
+
+ .cardtext{padding:5px 1px}.cardtext strong{font-size:9px}.cardtext small{font-size:8px}
+
+ .endturn{width:53px;height:53px;font-size:9px;border-width:3px}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="game">
+
+ <div class="sky"></div>
+
+ <header class="header">
+
+  <div class="logo">GRANBLUE FANTASY<small>天空之塔 · 星晶卡牌戰鬥</small></div>
+
+  <div class="hud"><span>🏆 <b id="floor">1</b> / 15</span><span>💎 <b id="crystals">0</b></span><span>☰ MENU</span></div>
+
+ </header>
+
+ <div id="team">
+
+  <div class="member"><img class="face" id="p1"><div class="memberinfo"><strong>娜爾梅亞</strong><span id="p1hp">HP 60</span><div class="hpbar"><i id="p1bar" style="width:100%"></i></div></div></div>
+
+  <div class="member"><img class="face" id="p2"><div class="memberinfo"><strong>佐伊</strong><span>HP 52</span><div class="hpbar"><i style="width:85%"></i></div></div></div>
+
+  <div class="member"><img class="face" id="p3"><div class="memberinfo"><strong>維拉</strong><span>HP 45</span><div class="hpbar"><i style="width:75%"></i></div></div></div>
+
+ </div>
+
+ <div id="dialog"><strong>旅團長，準備好了嗎？</strong><p id="message">打出卡牌，擊敗守護者，繼續前進吧！</p></div>
+
+ <img id="hero" alt="主角立繪">
+
+ <div class="art-fallback" id="bossFallback">🐉</div>
+
+ <img id="boss" alt="敵方立繪" style="display:none">
+
+ <div class="enemybox">
+
+  <div class="enemytitle"><b id="enemyName">Lv.10 風之巨龍</b><b id="enemyHP">40 / 40</b></div>
+
+  <div class="enemybar"><i id="enemybar" style="width:100%"></i></div>
+
+  <div id="intent">⚔ 敵方意圖：下回合造成 8 點傷害</div>
+
+ </div>
+
+ <div class="bottom">
+
+  <div class="side-tools">
+
+   <div class="crystal"><b id="energy">3/3</b><small>能量</small></div>
+
+   <button class="tool" id="discardBtn">棄牌堆 <b id="discard">0</b></button>
+
+   <button class="tool" id="drawBtn">抽牌堆 <b id="draw">5</b></button>
+
+  </div>
+
+  <div id="cards"></div>
+
+  <button class="endturn" id="end">⚔<br>結束回合</button>
+
+ </div>
+
+ <div id="toast"></div>
+
+</div>
+
+<script>
+
+const $=id=>document.getElementById(id);
+
+/* 可自行替換成你已取得授權的角色圖片網址。
+
+   若 Wiki 檔名不同，請到角色頁確認正確圖片名稱。 */
+
+const art={
+
+ n:"https://gbf.wiki/Special:FilePath/Narmaya_A.png",
+
+ z:"https://gbf.wiki/Special:FilePath/Zooey_A.png",
+
+ v:"https://gbf.wiki/Special:FilePath/Vira_A.png",
+
+ d:"https://gbf.wiki/Special:FilePath/Djeeta_A.png"
+
+};
+
+function img(id,url,fallback){
+
+ const el=$(id);
+
+ el.onerror=()=>{el.style.display="none";if(fallback)$(fallback).style.display="block"};
+
+ el.onload=()=>{el.style.display="";if(fallback)$(fallback).style.display="none"};
+
+ el.src=url;
+
+}
+
+img("p1",art.n,null);img("p2",art.z,null);img("p3",art.v,null);img("hero",art.n,null);
+
+const cards={
+
+ slash:{name:"烈焰斬",cost:1,kind:"attack",art:art.n,desc:"造成 8 點傷害",use:()=>hit(8)},
+
+ guard:{name:"水晶護盾",cost:1,kind:"",art:art.z,desc:"獲得 8 點格擋",use:()=>{g.block+=8;msg("獲得 8 點格擋！")}},
+
+ burst:{name:"聖光之矢",cost:2,kind:"special",art:art.z,desc:"造成 12 傷害並恢復 3 HP",use:()=>{hit(12);if(g.phase==="battle"){g.hp=Math.min(g.maxHP,g.hp+3);msg("聖光命中，恢復 3 點生命！")}}},
+
+ wind:{name:"風之加護",cost:1,kind:"heal",art:art.v,desc:"獲得 5 點格擋",use:()=>{g.block+=5;msg("風之加護展開！")}},
+
+ dark:{name:"黑暗之息",cost:1,kind:"special",art:art.n,desc:"抽取 2 張卡牌",use:()=>{drawCards(2);msg("抽取 2 張卡牌！")}}
+
+};
+
+const enemies=[
+
+ {name:"Lv.10 風之巨龍",hp:40,atk:8,icon:"🐉",art:art.z},
+
+ {name:"Lv.15 星晶騎士",hp:55,atk:10,icon:"🛡️",art:art.v},
+
+ {name:"Lv.20 深淵之王",hp:80,atk:13,icon:"🐲",art:art.n}
+
+];
+
+let g;
+
+function msg(s){$("message").textContent=s}
+
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function start(){
+
+ g={hp:60,maxHP:60,block:0,energy:3,floor:0,turn:1,crystals:0,phase:"battle",hand:[],draw:[],discard:[],enemy:null};
+
+ newFloor();
+
+}
+
+function newFloor(){
+
+ let e=enemies[g.floor%enemies.length];
+
+ g.enemy={...e,maxHP:e.hp};g.energy=3;g.block=0;g.turn=1;g.hand=[];g.discard=[];
+
+ g.draw=shuffle(["slash","slash","slash","guard","guard","burst","wind","dark","slash","wind"]);
+
+ drawCards(5);
+
+ $("bossFallback").textContent=e.icon;
+
+ $("boss").style.display="none";
+
+ img("boss",e.art,"bossFallback");
+
+ g.phase="battle";msg("戰鬥開始！觀察敵方意圖，安排你的能量。");render();
+
+}
+
+function drawCards(n){
+
+ for(let i=0;i<n;i++){
+
+  if(!g.draw.length){if(!g.discard.length)break;g.draw=shuffle(g.discard);g.discard=[]}
+
+  g.hand.push(g.draw.pop());
+
+ }
+
+}
+
+function hit(n){
+
+ let dealt=Math.min(n,g.enemy.hp);g.enemy.hp=Math.max(0,g.enemy.hp-n);
+
+ msg("造成 "+dealt+" 點傷害！");
+
+ if(g.enemy.hp<=0){g.phase="reward";g.crystals+=10;msg("勝利！獲得 10 枚星晶。");}
+
+}
+
+function play(i){
+
+ if(g.phase!=="battle")return;
+
+ let id=g.hand[i],c=cards[id];if(!c||g.energy<c.cost)return;
+
+ g.energy-=c.cost;g.hand.splice(i,1);g.discard.push(id);c.use();render();
+
+}
+
+function endTurn(){
+
+ if(g.phase==="reward"){
+
+  if(g.floor>=14){g.phase="won";msg("恭喜！你征服了天空之塔！");render();return}
+
+  g.floor++;g.hp=Math.min(g.maxHP,g.hp+8);newFloor();return;
+
+ }
+
+ if(g.phase!=="battle"){start();return}
+
+ let damage=Math.max(0,g.enemy.atk-g.block);
+
+ g.hp=Math.max(0,g.hp-damage);g.block=0;
+
+ if(g.hp<=0){g.phase="lost";msg("旅團戰敗了，重新挑戰吧！");render();return}
+
+ g.discard.push(...g.hand);g.hand=[];g.energy=3;g.turn++;drawCards(5);
+
+ msg("敵人造成 "+damage+" 點傷害。新回合開始！");render();
+
+}
+
+function render(){
+
+ $("floor").textContent=g.floor+1;$("crystals").textContent=g.crystals;
+
+ $("energy").textContent=g.energy+"/3";$("p1hp").textContent="HP "+g.hp;
+
+ $("p1bar").style.width=(g.hp/g.maxHP*100)+"%";
+
+ $("enemyName").textContent=g.enemy.name;$("enemyHP").textContent=g.enemy.hp+" / "+g.enemy.maxHP;
+
+ $("enemybar").style.width=(g.enemy.hp/g.enemy.maxHP*100)+"%";
+
+ $("intent").textContent=g.phase==="battle"?"⚔ 敵方意圖：下回合造成 "+g.enemy.atk+" 點傷害":"✦ 戰鬥結束";
+
+ $("discard").textContent=g.discard.length;$("draw").textContent=g.draw.length;
+
+ $("cards").innerHTML="";
+
+ g.hand.forEach((id,i)=>{
+
+  let c=cards[id],b=document.createElement("button");b.className="card "+c.kind;
+
+  b.disabled=g.phase!=="battle"||g.energy<c.cost;
+
+  let image=document.createElement("img");image.alt=c.name;
+
+  image.onerror=()=>image.style.display="none";image.src=c.art;b.appendChild(image);
+
+  let cost=document.createElement("span");cost.className="cost";cost.textContent=c.cost;b.appendChild(cost);
+
+  let txt=document.createElement("div");txt.className="cardtext";
+
+  txt.innerHTML="<strong>"+c.name+"</strong><small>"+(c.kind==="attack"?"攻擊":c.kind==="heal"?"技能":"技能")+"</small><small>"+c.desc+"</small>";
+
+  b.appendChild(txt);b.onclick=()=>play(i);$("cards").appendChild(b);
+
+ });
+
+ $("end").innerHTML=g.phase==="battle"?"⚔<br>結束回合":g.phase==="reward"?(g.floor>=14?"完成冒險":"下一層 ➜"):"重新開始 ↻";
+
+}
+
+$("end").onclick=endTurn;
+
+$("restart")?.addEventListener("click",start);
+
+$("discardBtn").onclick=()=>alert("棄牌堆目前有 "+g.discard.length+" 張卡牌。");
+
+$("drawBtn").onclick=()=>alert("抽牌堆剩餘 "+g.draw.length+" 張卡牌。");
+
+start();
+
+</script>
+
+</body>
+
+</html>
