@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 確保所有外部圖片都能順利載入 -->
     <meta name="referrer" content="no-referrer">
-    <title>碧藍尖塔 (Granblue Spire) - 奢華視覺版</title>
-    <!-- 引入日系奇幻英數字體 -->
+    <title>碧藍尖塔 (Granblue Spire) - 全魔物立繪實裝版</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --gold-border: linear-gradient(135deg, #d4af37 0%, #fff2a3 50%, #aa771c 100%);
-            --panel-bg: rgba(18, 22, 31, 0.82);
+            --boss-border: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            --panel-bg: rgba(18, 22, 31, 0.85);
             --font-fantasy: 'Cinzel', serif;
         }
 
@@ -30,7 +31,6 @@
             overflow-x: hidden;
         }
 
-        /* 頂部導航列 */
         #top-bar {
             display: flex;
             gap: 16px;
@@ -68,7 +68,6 @@
             transform: scale(1.03);
         }
 
-        /* 戰鬥區 */
         #battlefield {
             display: flex;
             justify-content: center;
@@ -105,7 +104,6 @@
             40%, 60% { transform: translate3d(6px, 0, 0); }
         }
 
-        /* 浮動數字 */
         .floating-text {
             position: absolute;
             font-family: var(--font-fantasy);
@@ -121,15 +119,22 @@
             100% { transform: translateY(-45px) scale(1.25); opacity: 0; }
         }
 
-        /* 角色頭像框 */
+        /* 圓形立繪頭像框 */
         .portrait-wrapper {
-            width: 110px;
-            height: 110px;
+            width: 115px;
+            height: 115px;
             border-radius: 50%;
             padding: 3px;
             background: var(--gold-border);
             box-shadow: 0 0 16px rgba(212, 175, 55, 0.5);
             margin-bottom: 8px;
+            transition: all 0.3s;
+        }
+
+        .portrait-wrapper.is-boss {
+            background: var(--boss-border);
+            box-shadow: 0 0 22px rgba(255, 65, 108, 0.8);
+            transform: scale(1.08);
         }
 
         .portrait-inner {
@@ -144,6 +149,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: center;
         }
 
         .entity-title {
@@ -155,7 +161,6 @@
             font-size: 16px;
         }
 
-        /* 血條與奧義條 */
         .bar-container {
             background: rgba(20, 20, 25, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -189,7 +194,6 @@
             color: #dcdfe4;
         }
 
-        /* 水晶能量球 (AP) */
         #ap-container {
             display: flex;
             align-items: center;
@@ -234,7 +238,6 @@
             text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
         }
 
-        /* 手牌區 */
         #hand {
             display: flex;
             gap: 15px;
@@ -265,7 +268,6 @@
             box-shadow: 0 12px 24px rgba(255, 215, 0, 0.4);
         }
 
-        /* 奧義卡酷炫呼吸燈 */
         .card.ultimate {
             background: linear-gradient(145deg, #3d1c47 0%, #1e0f24 100%);
             border: 2px solid #c678dd;
@@ -314,7 +316,6 @@
             border-radius: 6px;
         }
 
-        /* 按鈕視覺 */
         button.action-btn {
             margin-top: 10px;
             padding: 10px 32px;
@@ -334,7 +335,6 @@
             box-shadow: 0 6px 20px rgba(243, 156, 18, 0.8);
         }
 
-        /* 彈窗 UI */
         .modal {
             display: none;
             position: fixed;
@@ -395,10 +395,12 @@
 
         <!-- 敵人 -->
         <div class="entity" id="enemy">
-            <div class="portrait-wrapper" style="box-shadow: 0 0 16px rgba(255, 75, 43, 0.4);">
-                <div class="portrait-inner" style="line-height: 104px; font-size: 44px;">💧</div>
+            <div class="portrait-wrapper" id="enemy-portrait-box">
+                <div class="portrait-inner">
+                    <img id="enemy-img" src="" alt="敵方魔物">
+                </div>
             </div>
-            <div class="entity-title" id="enemy-name" style="color: #ff6b6b;">純水史萊姆</div>
+            <div class="entity-title" id="enemy-name" style="color: #ff6b6b;">魔物載入中</div>
 
             <div style="font-size: 13px; color: #f39c12; margin-bottom: 6px;">
                 意圖: <span id="enemy-intent" style="font-weight: bold;">攻擊 (6)</span>
@@ -437,11 +439,40 @@
     </div>
 
     <script>
+        // GBF 正版怪物立繪陣容
         const STAGES = [
-            { name: "純水史萊姆", hp: 35, emoji: "💧", dmgMin: 5, dmgMax: 8 },
-            { name: "帝國巡邏重裝兵", hp: 60, emoji: "🛡️", dmgMin: 8, dmgMax: 12 },
-            { name: "暴走星晶獸・哥倫姆", hp: 90, emoji: "🗿", dmgMin: 11, dmgMax: 16 },
-            { name: "原型巴哈姆特 (FINAL BOSS)", hp: 140, emoji: "🐲", dmgMin: 15, dmgMax: 22 }
+            { 
+                name: "水之史萊姆", 
+                hp: 35, 
+                img: "https://gbf.wiki/images/thumb/7/77/Enemy_b_2010001000.png/280px-Enemy_b_2010001000.png", 
+                dmgMin: 5, 
+                dmgMax: 8,
+                isBoss: false 
+            },
+            { 
+                name: "帝國巡邏重裝兵", 
+                hp: 60, 
+                img: "https://gbf.wiki/images/thumb/9/90/Enemy_b_2010012000.png/280px-Enemy_b_2010012000.png", 
+                dmgMin: 8, 
+                dmgMax: 12,
+                isBoss: false 
+            },
+            { 
+                name: "星晶獸・石巨人", 
+                hp: 90, 
+                img: "https://gbf.wiki/images/thumb/2/23/Enemy_b_2030006000.png/280px-Enemy_b_2030006000.png", 
+                dmgMin: 11, 
+                dmgMax: 16,
+                isBoss: false 
+            },
+            { 
+                name: "原型巴哈姆特 (FINAL BOSS)", 
+                hp: 140, 
+                img: "https://gbf.wiki/images/thumb/7/70/Proto_Bahamut_%28Raid%29.png/280px-Proto_Bahamut_%28Raid%29.png", 
+                dmgMin: 15, 
+                dmgMax: 22,
+                isBoss: true 
+            }
         ];
 
         const RELICS = [
@@ -461,7 +492,7 @@
         const state = {
             currentStage: 0,
             player: { maxHp: 50, hp: 50, shield: 0, ap: 3, maxAp: 3, charge: 0, strength: 0 },
-            enemy: { name: "", maxHp: 35, hp: 35, shield: 0, nextDamage: 6, emoji: "💧", burn: 0 },
+            enemy: { name: "", maxHp: 35, hp: 35, shield: 0, nextDamage: 6, img: "", burn: 0 },
             relic: null,
             deck: [
                 { name: "冥界之刃", cost: 1, type: "atk", value: 9, charge: 15, burn: 0, desc: "造成 9 傷害，+15% 奧義" },
@@ -487,7 +518,7 @@
             state.enemy.maxHp = enemyData.hp;
             state.enemy.hp = enemyData.hp;
             state.enemy.shield = 0;
-            state.enemy.emoji = enemyData.emoji;
+            state.enemy.img = enemyData.img;
             state.enemy.nextDamage = enemyData.dmgMin;
             state.enemy.burn = 0;
 
@@ -500,8 +531,16 @@
 
             document.getElementById('stage-header').innerText = `STAGE ${stageIndex + 1} / ${STAGES.length}`;
             document.getElementById('enemy-name').innerText = state.enemy.name;
-            document.querySelector('#enemy .portrait-inner').innerText = state.enemy.emoji;
+            document.getElementById('enemy-img').src = state.enemy.img;
             document.getElementById('enemy-max-hp').innerText = state.enemy.maxHp;
+
+            // BOSS 框特效
+            const portraitBox = document.getElementById('enemy-portrait-box');
+            if (enemyData.isBoss) {
+                portraitBox.classList.add('is-boss');
+            } else {
+                portraitBox.classList.remove('is-boss');
+            }
 
             drawCards(4);
             updateUI();
@@ -515,7 +554,6 @@
             document.getElementById('player-charge-bar').style.width = state.player.charge + '%';
             document.getElementById('deck-count').innerText = state.deck.length;
 
-            // 水晶 AP 更新
             for (let i = 1; i <= 3; i++) {
                 const gem = document.getElementById(`ap-${i}`);
                 if (i <= state.player.ap) gem.classList.remove('spent');
@@ -687,7 +725,7 @@
 
         function handleVictory() {
             if (state.currentStage >= STAGES.length - 1) {
-                alert("🎉 恭賀完全通關！ハロアズサ成功擊敗原型巴哈姆特，征服了碧藍尖塔！");
+                alert("🎉 恭賀完全通關！ハロアズサ成功討伐原型巴哈姆特，征服了碧藍尖塔！");
                 location.reload();
                 return;
             }
