@@ -3,28 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 繞過防盜連，確保圖片載入正常 -->
     <meta name="referrer" content="no-referrer">
-    <title>碧藍尖塔 - ハロアズサ參戰</title>
+    <title>碧藍尖塔 (Granblue Spire) - 肉鴿版</title>
     <style>
         body {
-            background: radial-gradient(circle at center, #1e2430 0%, #0d1117 100%);
+            background: radial-gradient(circle at center, #1b2028 0%, #0c0e12 100%);
             color: #f0f0f0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             user-select: none;
             min-height: 100vh;
         }
 
-        h2 {
-            margin: 5px 0 20px 0;
-            letter-spacing: 2px;
-            color: #c678dd;
-            text-shadow: 0 0 10px rgba(198, 120, 221, 0.5);
+        /* 頂部關卡狀態 */
+        #stage-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #e5c07b;
+            background: rgba(0,0,0,0.5);
+            padding: 6px 20px;
+            border-radius: 20px;
+            border: 1px solid #e5c07b;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
         }
 
         #battlefield {
@@ -47,16 +52,28 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            transition: transform 0.1s;
         }
 
-        /* 角色頭像/立繪容器 */
+        /* 受擊震動動畫 */
+        .shake {
+            animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+            border-color: #e06c75 !important;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
         .portrait-wrapper {
-            width: 125px;
-            height: 125px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             border: 3px solid #e5c07b;
             overflow: hidden;
-            box-shadow: 0 0 14px rgba(229, 192, 123, 0.6);
+            box-shadow: 0 0 14px rgba(229, 192, 123, 0.5);
             margin-bottom: 12px;
             background: #111;
         }
@@ -89,9 +106,9 @@
         }
 
         #log {
-            margin: 20px 0;
-            height: 40px;
-            font-size: 16px;
+            margin: 15px 0;
+            height: 35px;
+            font-size: 15px;
             color: #e5c07b;
             text-align: center;
             font-weight: 500;
@@ -153,7 +170,7 @@
         }
 
         button.end-turn {
-            margin-top: 20px;
+            margin-top: 15px;
             padding: 10px 30px;
             background: linear-gradient(135deg, #98c379, #2ecc71);
             border: none;
@@ -165,15 +182,43 @@
             box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
             transition: filter 0.2s;
         }
+        button.end-turn:hover { filter: brightness(1.15); }
 
-        button.end-turn:hover {
-            filter: brightness(1.15);
+        /* 戰勝獎勵彈窗 (Modal) */
+        #reward-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #reward-modal h2 {
+            color: #f1c40f;
+            margin-bottom: 10px;
+        }
+        #reward-cards {
+            display: flex;
+            gap: 25px;
+            margin: 20px 0;
+        }
+        .skip-btn {
+            background: #e06c75;
+            color: white;
+            border: none;
+            padding: 8px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
 
-    <h2>碧藍尖塔 (Granblue Spire)</h2>
+    <div id="stage-header">第 1 層 / 共 3 層</div>
 
     <div id="battlefield">
         <!-- 玩家：ハロアズサ -->
@@ -181,7 +226,7 @@
             <div class="portrait-wrapper">
                 <img src="https://img.gamewith.jp/article_tools/granbluefantasy/gacha/3678hyouka.jpg" alt="ハロアズサ">
             </div>
-            <h3 style="margin: 0 0 8px 0; color: #e5c07b;">ハロアズサ (Azusa)</h3>
+            <h3 style="margin: 0 0 8px 0; color: #e5c07b;">ハロアズサ</h3>
             
             <div class="stat-line">
                 <span>生命</span>
@@ -199,22 +244,23 @@
                 <span>護甲: <b id="player-shield" style="color: #61afef;">0</b></span>
                 <span>能量 (AP): <b id="player-ap" style="color: #98c379;">3</b>/3</span>
             </div>
+            <div style="font-size: 12px; color: #888; margin-top: 6px;">牌組張數: <span id="deck-count">4</span> 張</div>
         </div>
 
         <!-- 敵人 -->
         <div class="entity" id="enemy">
-            <div class="portrait-wrapper" style="border-color: #e06c75;">
-                <div style="line-height: 125px; font-size: 40px; background: #222;">🐲</div>
+            <div class="portrait-wrapper" id="enemy-avatar" style="border-color: #e06c75;">
+                <div id="enemy-emoji" style="line-height: 120px; font-size: 45px; background: #222;">💧</div>
             </div>
-            <h3 style="margin: 0 0 8px 0; color: #e06c75;">原型巴哈姆特</h3>
+            <h3 style="margin: 0 0 8px 0; color: #e06c75;" id="enemy-name">純水史萊姆</h3>
 
             <div style="font-size: 13px; color: #d19a66; margin-bottom: 6px;">
-                意圖: <span id="enemy-intent" style="font-weight: bold;">攻擊 (10)</span>
+                意圖: <span id="enemy-intent" style="font-weight: bold;">攻擊 (6)</span>
             </div>
 
             <div class="stat-line">
                 <span>生命</span>
-                <span><span id="enemy-hp">80</span>/80</span>
+                <span><span id="enemy-hp">35</span>/<span id="enemy-max-hp">35</span></span>
             </div>
             <div class="bar-container"><div id="enemy-hp-bar" class="hp-fill"></div></div>
 
@@ -224,23 +270,72 @@
         </div>
     </div>
 
-    <div id="log">輪到ハロアズサ的回合！選擇卡牌展開行動。</div>
+    <div id="log">輪到ハロアズサ的回合！</div>
     <div id="hand"></div>
     <button class="end-turn" onclick="endTurn()">結束回合</button>
 
+    <!-- 戰勝結算三選一視窗 -->
+    <div id="reward-modal">
+        <h2>★ 討伐成功！選擇一張卡牌加入牌庫 ★</h2>
+        <div style="color: #aaa; font-size: 14px;">或選擇跳過直接前進下一層</div>
+        <div id="reward-cards"></div>
+        <button class="skip-btn" onclick="nextStage()">跳過並前進下一層</button>
+    </div>
+
     <script>
+        // 敵人關卡列表
+        const STAGES = [
+            { name: "純水史萊姆", hp: 35, emoji: "💧", dmgMin: 5, dmgMax: 8 },
+            { name: "帝國巡邏重裝兵", hp: 60, emoji: "🛡️", dmgMin: 8, dmgMax: 13 },
+            { name: "原型巴哈姆特 (BOSS)", hp: 110, emoji: "🐲", dmgMin: 12, dmgMax: 18 }
+        ];
+
+        // 隨機卡牌獎勵池
+        const REWARD_POOL = [
+            { name: "萬聖南瓜斬", cost: 1, type: "atk", value: 12, charge: 20, desc: "召喚南瓜重擊，造成 12 傷害，+20% 奧義" },
+            { name: "冥界庇護", cost: 1, type: "def", value: 11, charge: 15, desc: "冥界幽火護身，獲得 11 護甲，+15% 奧義" },
+            { name: "修羅蓄力斬", cost: 2, type: "atk", value: 26, charge: 30, desc: "蓄滿全力一揮，造成 26 巨量傷害，+30% 奧義" },
+            { name: "夜宴甜點", cost: 1, type: "heal", value: 8, charge: 10, desc: "品嚐萬聖糖果，立即回復 8 生命，+10% 奧義" },
+            { name: "百鬼幽夜陣", cost: 2, type: "def", value: 22, charge: 20, desc: "展開堅實幽夜陣，獲得 22 護甲，+20% 奧義" }
+        ];
+
         const state = {
+            currentStage: 0,
             player: { maxHp: 50, hp: 50, shield: 0, ap: 3, maxAp: 3, charge: 0 },
-            enemy: { maxHp: 80, hp: 80, shield: 0, nextDamage: 10 },
-            // ハロアズサ風格卡牌
+            enemy: { name: "", maxHp: 35, hp: 35, shield: 0, nextDamage: 6, emoji: "💧" },
+            // 初始牌庫
             deck: [
-                { name: "冥界之刃", cost: 1, type: "atk", value: 9, charge: 15, desc: "揮動冥刀，造成 9 傷害，+15% 奧義" },
-                { name: "夜色迷蹤", cost: 1, type: "def", value: 8, charge: 10, desc: "融入夜色，獲得 8 護甲，+10% 奧義" },
-                { name: "百鬼繚亂", cost: 2, type: "atk", value: 20, charge: 25, desc: "重斬群靈，造成 20 傷害，+25% 奧義" },
-                { name: "幽火障壁", cost: 2, type: "def", value: 17, charge: 15, desc: "召喚幽火，獲得 17 護甲，+15% 奧義" },
+                { name: "冥界之刃", cost: 1, type: "atk", value: 9, charge: 15, desc: "造成 9 傷害，+15% 奧義" },
+                { name: "夜色迷蹤", cost: 1, type: "def", value: 8, charge: 10, desc: "獲得 8 護甲，+10% 奧義" },
+                { name: "百鬼繚亂", cost: 2, type: "atk", value: 20, charge: 25, desc: "造成 20 傷害，+25% 奧義" },
+                { name: "幽火障壁", cost: 2, type: "def", value: 17, charge: 15, desc: "獲得 17 護甲，+15% 奧義" },
             ],
             hand: []
         };
+
+        function initStage(stageIndex) {
+            state.currentStage = stageIndex;
+            const enemyData = STAGES[stageIndex];
+            state.enemy.name = enemyData.name;
+            state.enemy.maxHp = enemyData.hp;
+            state.enemy.hp = enemyData.hp;
+            state.enemy.shield = 0;
+            state.enemy.emoji = enemyData.emoji;
+            state.enemy.nextDamage = enemyData.dmgMin;
+
+            // 玩家換層小補血 10 HP，重置能量護甲
+            state.player.hp = Math.min(state.player.maxHp, state.player.hp + 10);
+            state.player.shield = 0;
+            state.player.ap = state.player.maxAp;
+
+            document.getElementById('stage-header').innerText = `第 ${stageIndex + 1} 層 / 共 ${STAGES.length} 層`;
+            document.getElementById('enemy-name').innerText = state.enemy.name;
+            document.getElementById('enemy-emoji').innerText = state.enemy.emoji;
+            document.getElementById('enemy-max-hp').innerText = state.enemy.maxHp;
+
+            drawCards(4);
+            updateUI();
+        }
 
         function updateUI() {
             document.getElementById('player-hp').innerText = state.player.hp;
@@ -249,6 +344,7 @@
             document.getElementById('player-ap').innerText = state.player.ap;
             document.getElementById('player-charge').innerText = state.player.charge;
             document.getElementById('player-charge-bar').style.width = state.player.charge + '%';
+            document.getElementById('deck-count').innerText = state.deck.length;
 
             document.getElementById('enemy-hp').innerText = state.enemy.hp;
             document.getElementById('enemy-hp-bar').style.width = (state.enemy.hp / state.enemy.maxHp * 100) + '%';
@@ -265,7 +361,7 @@
                     cost: 0,
                     type: "ultimate",
                     value: 40,
-                    desc: "消耗 100% 奧義，釋放阿梓的全力幽夜一刀，造成 40 傷害！"
+                    desc: "消耗 100% 奧義，釋放阿梓的全力一刀，造成 40 傷害！"
                 });
             }
 
@@ -291,28 +387,40 @@
             state.player.ap -= card.cost;
 
             if (card.type === "atk") {
+                triggerShake('enemy');
                 applyDamage(state.enemy, card.value);
                 state.player.charge = Math.min(100, state.player.charge + card.charge);
-                document.getElementById('log').innerText = `ハロアズサ使用了【${card.name}】，造成 ${card.value} 點傷害！`;
+                document.getElementById('log').innerText = `使用【${card.name}】，造成 ${card.value} 傷害！`;
                 state.hand.splice(index, 1);
             } else if (card.type === "def") {
                 state.player.shield += card.value;
                 state.player.charge = Math.min(100, state.player.charge + card.charge);
-                document.getElementById('log').innerText = `ハロアズサ使用了【${card.name}】，獲得 ${card.value} 點護甲！`;
+                document.getElementById('log').innerText = `使用【${card.name}】，獲得 ${card.value} 護甲！`;
+                state.hand.splice(index, 1);
+            } else if (card.type === "heal") {
+                state.player.hp = Math.min(state.player.maxHp, state.player.hp + card.value);
+                state.player.charge = Math.min(100, state.player.charge + card.charge);
+                document.getElementById('log').innerText = `使用【${card.name}】，回復 ${card.value} 生命！`;
                 state.hand.splice(index, 1);
             } else if (card.type === "ultimate") {
+                triggerShake('enemy');
                 state.player.charge = 0;
                 applyDamage(state.enemy, card.value);
-                document.getElementById('log').innerText = `奧義釋放！【冥界幽夜斬】直接重創敵人 ${card.value} 點傷害！`;
+                document.getElementById('log').innerText = `奧義釋放！【冥界幽夜斬】造成 ${card.value} 點傷害！`;
             }
 
             if (state.enemy.hp <= 0) {
-                alert("討伐成功！ハロアズサ擊敗了原型巴哈姆特！");
-                location.reload();
+                handleVictory();
                 return;
             }
 
             updateUI();
+        }
+
+        function triggerShake(targetId) {
+            const el = document.getElementById(targetId);
+            el.classList.add('shake');
+            setTimeout(() => el.classList.remove('shake'), 300);
         }
 
         function applyDamage(target, damage) {
@@ -336,6 +444,8 @@
         function endTurn() {
             document.getElementById('log').innerText = "敵方行動中...";
             let dmg = state.enemy.nextDamage;
+            
+            triggerShake('player');
             applyDamage(state.player, dmg);
 
             if (state.player.hp <= 0) {
@@ -347,14 +457,58 @@
             state.player.ap = state.player.maxAp;
             state.player.shield = 0;
             state.enemy.shield = 0;
-            state.enemy.nextDamage = Math.floor(Math.random() * 8) + 8;
+            
+            // 隨機產生下回合傷害
+            const stageData = STAGES[state.currentStage];
+            state.enemy.nextDamage = Math.floor(Math.random() * (stageData.dmgMax - stageData.dmgMin + 1)) + stageData.dmgMin;
+            
             drawCards(4);
-            document.getElementById('log').innerText = `敵方造成了 ${dmg} 點傷害！輪到ハロアズサ的回合。`;
+            document.getElementById('log').innerText = `敵方造成 ${dmg} 點傷害！輪到ハロアズサ的回合。`;
             updateUI();
         }
 
-        drawCards(4);
-        updateUI();
+        // 戰鬥獲勝處理
+        function handleVictory() {
+            if (state.currentStage >= STAGES.length - 1) {
+                alert("🎉 恭喜通關！ハロアズサ成功討伐了原型巴哈姆特，征服了尖塔！");
+                location.reload();
+                return;
+            }
+
+            // 開啟三選一獎勵彈窗
+            const rewardContainer = document.getElementById('reward-cards');
+            rewardContainer.innerHTML = '';
+            
+            // 隨機選 3 張不重複的卡牌
+            let shuffled = [...REWARD_POOL].sort(() => 0.5 - Math.random());
+            let selected = shuffled.slice(0, 3);
+
+            selected.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'card';
+                cardDiv.innerHTML = `
+                    <div class="card-cost">${card.cost} AP</div>
+                    <div class="card-title">${card.name}</div>
+                    <div class="card-desc">${card.desc}</div>
+                `;
+                cardDiv.onclick = () => {
+                    state.deck.push(card);
+                    nextStage();
+                };
+                rewardContainer.appendChild(cardDiv);
+            });
+
+            document.getElementById('reward-modal').style.display = 'flex';
+        }
+
+        function nextStage() {
+            document.getElementById('reward-modal').style.display = 'none';
+            initStage(state.currentStage + 1);
+            document.getElementById('log').innerText = `進入第 ${state.currentStage + 1} 層！遭遇了新敵人！`;
+        }
+
+        // 開始第 1 層
+        initStage(0);
     </script>
 </body>
 </html>
