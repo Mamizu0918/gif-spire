@@ -2,6 +2,598 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GBF Roguelike Prototype</title>
+  <!-- 解決破圖的關鍵：告訴瀏覽器不要發送來源(Referrer)資訊，繞過 Wiki 防盜鏈 -->
+  <meta name="referrer" content="no-referrer">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Noto+Sans+TC:wght@500;700&display=swap');
+
+    :root {
+      --gbf-blue: #0A192F;
+      --gbf-gold: #F2C94C;
+      --gbf-hp: #27AE60;
+      --gbf-ougi: #F2994A;
+      --text-glow: 0 0 10px rgba(242, 201, 76, 0.8);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background-color: #000;
+      color: white;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    /* 遊戲主容器：模擬手機/桌面皆可的比例 */
+    #game-container {
+      width: 100%;
+      max-width: 600px;
+      height: 100%;
+      max-height: 900px;
+      position: relative;
+      background: url('https://wsrv.nl/?url=gbf.wiki/Special:FilePath/Bg_world_map_1.png') center/cover;
+      box-shadow: 0 0 20px rgba(0,0,0,0.8);
+      overflow: hidden;
+    }
+
+    /* 頂部 Header */
+    #header {
+      position: absolute;
+      top: 0; width: 100%;
+      height: 60px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      font-family: 'Cinzel', serif;
+      font-size: 24px;
+      color: var(--gbf-gold);
+      text-shadow: var(--text-glow);
+    }
+
+    /* 畫面切換控制 */
+    .screen {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      display: none;
+      flex-direction: column;
+    }
+    .screen.active { display: flex; }
+
+    /* --- MAP SCREEN --- */
+    #map-screen {
+      justify-content: flex-end;
+      padding-bottom: 80px;
+      background-color: rgba(0,0,0,0.6);
+    }
+    .map-node {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 20px auto;
+      width: 100%;
+      cursor: pointer;
+      opacity: 0.5;
+      filter: grayscale(100%);
+      transition: all 0.3s;
+    }
+    .map-node.unlocked {
+      opacity: 1;
+      filter: none;
+    }
+    .map-node.completed {
+      opacity: 0.3;
+      filter: brightness(0.5);
+    }
+    .map-stamp {
+      width: 80px;
+      height: auto;
+      filter: drop-shadow(0 0 5px rgba(0,0,0,0.8));
+    }
+    .map-node.unlocked .map-stamp {
+      filter: drop-shadow(0 0 15px var(--gbf-gold));
+    }
+    .node-info {
+      font-family: 'Cinzel', serif;
+      font-weight: bold;
+      font-size: 1.2rem;
+      margin-left: 15px;
+      text-shadow: 2px 2px 4px #000;
+    }
+
+    /* --- BATTLE SCREEN --- */
+    #battle-screen {
+      background: url('https://wsrv.nl/?url=gbf.wiki/Special:FilePath/Bg_scene_1.png') center/cover;
+    }
+    .battle-field {
+      flex: 1;
+      position: relative;
+    }
+
+    /* 敵人佈局 */
+    #enemy-container {
+      position: absolute;
+      top: 15%;
+      right: 5%;
+      width: 45%;
+      height: 40%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .enemy-sprite {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(0,0,0,0.8));
+    }
+
+    /* 玩家 4 人小隊佈局 */
+    #party-container {
+      position: absolute;
+      bottom: 25%;
+      left: 5%;
+      width: 60%;
+      height: 45%;
+    }
+    .party-sprite {
+      position: absolute;
+      width: 70%;
+      bottom: 0;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(0,0,0,0.8));
+      transition: all 0.3s;
+    }
+    /* 交疊站位 */
+    .party-sprite:nth-child(4) { left: 0%; z-index: 1; transform: scale(0.85); opacity: 0.9;}
+    .party-sprite:nth-child(3) { left: 15%; z-index: 2; transform: scale(0.9);}
+    .party-sprite:nth-child(2) { left: 30%; z-index: 3; transform: scale(0.95);}
+    .party-sprite:nth-child(1) { left: 45%; z-index: 4; transform: scale(1);}
+
+    .dead {
+      filter: grayscale(100%) brightness(0.5) !important;
+    }
+
+    /* 戰鬥底部 UI 面板 */
+    #battle-ui {
+      height: 25%;
+      background: linear-gradient(to top, rgba(10,25,47,1) 60%, rgba(10,25,47,0.8));
+      border-top: 2px solid var(--gbf-gold);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 4 格角色狀態列 */
+    #party-status {
+      display: flex;
+      width: 100%;
+      height: 60%;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .char-card {
+      flex: 1;
+      border-right: 1px solid rgba(255,255,255,0.2);
+      position: relative;
+      background-size: cover;
+      background-position: top center;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 5px;
+    }
+    .char-card::before {
+      content: '';
+      position: absolute;
+      top:0; left:0; right:0; bottom:0;
+      background: linear-gradient(to top, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.2));
+    }
+    .char-card.dead-card::before {
+      background: rgba(0,0,0,0.7);
+    }
+    .char-info {
+      position: relative;
+      z-index: 2;
+      font-size: 0.7rem;
+    }
+    .bar-container {
+      width: 100%; height: 6px;
+      background: #333; margin-top: 3px;
+      border: 1px solid #000;
+    }
+    .hp-bar { height: 100%; background: var(--gbf-hp); transition: width 0.3s; }
+    .ougi-bar { height: 100%; background: var(--gbf-ougi); transition: width 0.3s; }
+
+    /* 按鈕控制區 */
+    .controls {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      padding: 10px;
+    }
+    button {
+      padding: 12px 30px;
+      font-family: 'Cinzel', serif;
+      font-weight: bold;
+      font-size: 1.2rem;
+      border: 2px solid var(--gbf-gold);
+      border-radius: 5px;
+      background: linear-gradient(180deg, #4F1B1B, #2A0808);
+      color: var(--gbf-gold);
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+      transition: 0.1s;
+    }
+    button:active { transform: translateY(2px); }
+    button:disabled { filter: grayscale(100%); cursor: not-allowed; }
+
+    /* 動畫特效 */
+    @keyframes attackDash {
+      0% { transform: translateX(0); }
+      50% { transform: translateX(30px) scale(1.1); filter: brightness(1.5); }
+      100% { transform: translateX(0); }
+    }
+    @keyframes enemyHit {
+      0% { transform: translateX(0); filter: brightness(1); }
+      20% { transform: translateX(-10px); filter: brightness(2) hue-rotate(-50deg); }
+      40% { transform: translateX(10px); }
+      60% { transform: translateX(-10px); }
+      80% { transform: translateX(10px); }
+      100% { transform: translateX(0); filter: brightness(1); }
+    }
+    @keyframes ougiDash {
+      0% { transform: translateX(0); filter: brightness(1); }
+      30% { transform: translateX(-20px); filter: brightness(2) drop-shadow(0 0 20px gold); }
+      50% { transform: translateX(100px) scale(1.2); }
+      100% { transform: translateX(0); filter: brightness(1); }
+    }
+    @keyframes chainBurstShake {
+      0% { transform: translate(0, 0); }
+      10% { transform: translate(-15px, -15px); }
+      20% { transform: translate(15px, 15px); }
+      30% { transform: translate(-15px, 15px); }
+      40% { transform: translate(15px, -15px); }
+      50% { transform: translate(-10px, -10px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    .anim-attack { animation: attackDash 0.4s ease-out; }
+    .anim-hit { animation: enemyHit 0.4s; }
+    .anim-ougi { animation: ougiDash 0.8s ease-out; z-index: 10 !important; }
+    .anim-chain { animation: chainBurstShake 1s ease-in-out; }
+
+    /* 浮動文字特效 */
+    .dmg-text {
+      position: absolute;
+      font-family: 'Cinzel', serif;
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: white;
+      -webkit-text-stroke: 2px black;
+      pointer-events: none;
+      z-index: 20;
+      animation: floatUp 1s ease-out forwards;
+    }
+    .ougi-text {
+      color: var(--gbf-gold);
+      font-size: 3rem;
+      -webkit-text-stroke: 2px red;
+    }
+    .chain-burst-text {
+      position: absolute;
+      top: 40%; width: 100%; text-align: center;
+      font-family: 'Cinzel', serif;
+      font-size: 3.5rem;
+      color: var(--gbf-gold);
+      -webkit-text-stroke: 3px #800000;
+      text-shadow: 0 0 30px gold;
+      opacity: 0;
+      z-index: 30;
+      animation: popIn 2s ease-out forwards;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.1); opacity: 0; }
+      20% { transform: scale(1.2); opacity: 1; }
+      80% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+  <div id="header">GRANBLUE FANTASY ROGUELIKE</div>
+
+  <!-- Map Screen -->
+  <div id="map-screen" class="screen active">
+    <!-- Nodes generated by JS -->
+  </div>
+
+  <!-- Battle Screen -->
+  <div id="battle-screen" class="screen">
+    <div class="battle-field" id="battle-field">
+      <div id="enemy-container">
+        <!-- Enemy info -->
+        <div style="font-family:'Cinzel'; font-weight:bold; text-shadow:1px 1px 2px #000; margin-bottom:5px;" id="enemy-name">Boss Name</div>
+        <div style="width:80%; height:8px; background:#333; border:1px solid #000; margin-bottom:10px;">
+          <div id="enemy-hp-bar" style="height:100%; background:red; width:100%; transition: width 0.3s;"></div>
+        </div>
+        <img id="enemy-img" src="" class="enemy-sprite" crossorigin="anonymous">
+      </div>
+      
+      <div id="party-container">
+        <!-- Party sprites generated by JS -->
+      </div>
+    </div>
+    
+    <div id="battle-ui">
+      <div id="party-status">
+        <!-- UI Cards generated by JS -->
+      </div>
+      <div class="controls">
+        <button id="btn-attack" onclick="startTurn()">ATTACK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 使用官方 CDN 取得高畫質無破圖原檔
+  const partyData = [
+    { id: 'narmaya', name: 'Narmaya', hp: 4500, maxHp: 4500, ougi: 0, img: 'https://prd-game-a-granbluefantasy.akamaized.net/assets_en/img/sp/assets/npc/zoom/3040063000_01.png' },
+    { id: 'cagliostro', name: 'Cagliostro', hp: 3800, maxHp: 3800, ougi: 0, img: 'https://prd-game-a-granbluefantasy.akamaized.net/assets_en/img/sp/assets/npc/zoom/3040009000_01.png' },
+    { id: 'zeta', name: 'Zeta', hp: 4200, maxHp: 4200, ougi: 0, img: 'https://prd-game-a-granbluefantasy.akamaized.net/assets_en/img/sp/assets/npc/zoom/3040028000_01.png' },
+    { id: 'vikala', name: 'Vikala', hp: 4000, maxHp: 4000, ougi: 0, img: 'https://prd-game-a-granbluefantasy.akamaized.net/assets_en/img/sp/assets/npc/zoom/3040252000_01.png' }
+  ];
+
+  // 敵人與地圖資源使用代理伺服器繞過 Wiki 盜鏈機制
+  const stampImg = 'https://wsrv.nl/?url=gbf.wiki/Special:FilePath/Stamp290.png';
+  
+  const mapNodes = [
+    { level: 3, name: '巴哈姆特', boss: 'Proto Bahamut', hp: 20000, maxHp: 20000, img: 'https://wsrv.nl/?url=gbf.wiki/Special:FilePath/Proto_Bahamut.png' },
+    { level: 2, name: '世界樹', boss: 'Yggdrasil', hp: 8000, maxHp: 8000, img: 'https://wsrv.nl/?url=gbf.wiki/Special:FilePath/Yggdrasil_Malignant.png' },
+    { level: 1, name: '惡魔前哨', boss: 'Azazel', hp: 4000, maxHp: 4000, img: 'https://wsrv.nl/?url=gbf.wiki/Special:FilePath/Azazel_A.png' }
+  ];
+
+  let currentLevel = 1;
+  let currentEnemy = null;
+  let party = JSON.parse(JSON.stringify(partyData));
+
+  // --- 初始化地圖 ---
+  function renderMap() {
+    const mapScreen = document.getElementById('map-screen');
+    mapScreen.innerHTML = '';
+    
+    mapNodes.forEach(node => {
+      const div = document.createElement('div');
+      div.className = `map-node ${node.level < currentLevel ? 'completed' : node.level === currentLevel ? 'unlocked' : ''}`;
+      div.innerHTML = `
+        <img src="${stampImg}" class="map-stamp">
+        <div class="node-info">Lv.${node.level} ${node.name}</div>
+      `;
+      if (node.level === currentLevel) {
+        div.onclick = () => enterBattle(node);
+      }
+      mapScreen.appendChild(div);
+    });
+  }
+
+  function enterBattle(node) {
+    currentEnemy = JSON.parse(JSON.stringify(node));
+    document.getElementById('map-screen').classList.remove('active');
+    document.getElementById('battle-screen').classList.add('active');
+    
+    document.getElementById('enemy-name').innerText = currentEnemy.boss;
+    document.getElementById('enemy-img').src = currentEnemy.img;
+    updateEnemyHp();
+    renderParty();
+    renderUI();
+  }
+
+  function renderParty() {
+    const container = document.getElementById('party-container');
+    container.innerHTML = '';
+    // 注意渲染順序，1號位在最前面(Z-index最高)
+    party.slice().reverse().forEach((member, index) => {
+      const img = document.createElement('img');
+      img.src = member.img;
+      img.className = `party-sprite ${member.hp <= 0 ? 'dead' : ''}`;
+      img.id = `sprite-${member.id}`;
+      container.appendChild(img);
+    });
+  }
+
+  function renderUI() {
+    const statusContainer = document.getElementById('party-status');
+    statusContainer.innerHTML = '';
+    
+    party.forEach(member => {
+      const hpPct = Math.max(0, (member.hp / member.maxHp) * 100);
+      const ougiPct = Math.min(100, member.ougi);
+      const isDead = member.hp <= 0;
+
+      const card = document.createElement('div');
+      card.className = `char-card ${isDead ? 'dead-card' : ''}`;
+      card.style.backgroundImage = `url(${member.img})`;
+      
+      card.innerHTML = `
+        <div class="char-info">
+          <div style="font-weight:bold; color:${isDead ? 'gray' : 'white'}">${member.name}</div>
+          <div class="bar-container"><div class="hp-bar" style="width:${hpPct}%"></div></div>
+          <div class="bar-container"><div class="ougi-bar" style="width:${ougiPct}%"></div></div>
+        </div>
+      `;
+      statusContainer.appendChild(card);
+    });
+  }
+
+  function updateEnemyHp() {
+    const pct = Math.max(0, (currentEnemy.hp / currentEnemy.maxHp) * 100);
+    document.getElementById('enemy-hp-bar').style.width = `${pct}%`;
+  }
+
+  const wait = (ms) => new Promise(res => setTimeout(res, ms));
+
+  function showDamageText(targetId, dmg, isOugi = false) {
+    const text = document.createElement('div');
+    text.className = `dmg-text ${isOugi ? 'ougi-text' : ''}`;
+    text.innerText = dmg;
+    
+    if (targetId === 'enemy') {
+      text.style.right = (15 + Math.random()*20) + '%';
+      text.style.top = (25 + Math.random()*20) + '%';
+    } else {
+      text.style.left = (30 + Math.random()*20) + '%';
+      text.style.bottom = (30 + Math.random()*20) + '%';
+      text.style.color = '#ff6b6b';
+    }
+    
+    document.getElementById('battle-field').appendChild(text);
+    setTimeout(() => text.remove(), 1000);
+  }
+
+  // --- 戰鬥邏輯核心 (非同步回合制) ---
+  async function startTurn() {
+    document.getElementById('btn-attack').disabled = true;
+    let ougiChainCount = 0;
+
+    // 1. 玩家隊伍依序攻擊
+    for (let i = 0; i < party.length; i++) {
+      let char = party[i];
+      if (char.hp <= 0) continue; // 死亡跳過
+      if (currentEnemy.hp <= 0) break;
+
+      const sprite = document.getElementById(`sprite-${char.id}`);
+      const enemyImg = document.getElementById('enemy-img');
+      
+      let dmg = 0;
+      let isOugi = false;
+
+      // 判斷是否施放奧義
+      if (char.ougi >= 100) {
+        isOugi = true;
+        ougiChainCount++;
+        char.ougi = 0;
+        dmg = Math.floor(Math.random() * 2000 + 4000); // 奧義巨量傷害
+        sprite.classList.add('anim-ougi');
+      } else {
+        char.ougi += 25; // 普攻增加奧義值
+        dmg = Math.floor(Math.random() * 500 + 500);
+        sprite.classList.add('anim-attack');
+      }
+
+      await wait(300); // 攻擊動作時間
+
+      // 敵人受擊
+      currentEnemy.hp -= dmg;
+      enemyImg.classList.add('anim-hit');
+      showDamageText('enemy', dmg, isOugi);
+      updateEnemyHp();
+      renderUI();
+
+      await wait(400); // 傷害跳出停留
+      sprite.classList.remove('anim-attack', 'anim-ougi');
+      enemyImg.classList.remove('anim-hit');
+      await wait(200); // 角色間隔
+    }
+
+    // 2. 判斷 Chain Burst (2人以上發動奧義)
+    if (currentEnemy.hp > 0 && ougiChainCount >= 2) {
+      await wait(500);
+      document.getElementById('game-container').classList.add('anim-chain');
+      
+      const cbText = document.createElement('div');
+      cbText.className = 'chain-burst-text';
+      cbText.innerText = `CHAIN BURST (${ougiChainCount})!`;
+      document.getElementById('battle-field').appendChild(cbText);
+      
+      await wait(800);
+      let cbDmg = ougiChainCount * 2500;
+      currentEnemy.hp -= cbDmg;
+      document.getElementById('enemy-img').classList.add('anim-hit');
+      showDamageText('enemy', cbDmg, true);
+      updateEnemyHp();
+      
+      await wait(1200);
+      cbText.remove();
+      document.getElementById('game-container').classList.remove('anim-chain');
+      document.getElementById('enemy-img').classList.remove('anim-hit');
+    }
+
+    // 3. 結算敵人死亡或反擊
+    if (currentEnemy.hp <= 0) {
+      alert("戰鬥勝利！");
+      currentLevel++;
+      if(currentLevel > 3) {
+        alert("恭喜通關所有肉鴿節點！");
+        currentLevel = 1;
+        party = JSON.parse(JSON.stringify(partyData)); // 重置隊伍
+      }
+      document.getElementById('battle-screen').classList.remove('active');
+      document.getElementById('map-screen').classList.add('active');
+      renderMap();
+    } else {
+      // 敵人反擊
+      await wait(500);
+      document.getElementById('enemy-img').classList.add('anim-attack'); // 借用衝刺動畫
+      await wait(300);
+      
+      // 隨機打一個活著的成員
+      let aliveMembers = party.filter(m => m.hp > 0);
+      if(aliveMembers.length > 0) {
+        let target = aliveMembers[Math.floor(Math.random() * aliveMembers.length)];
+        let eDmg = Math.floor(Math.random() * 800 + 800);
+        target.hp -= eDmg;
+        target.ougi += 10; // 受傷加奧義
+        
+        let targetSprite = document.getElementById(`sprite-${target.id}`);
+        targetSprite.classList.add('anim-hit');
+        showDamageText(target.id, eDmg);
+        
+        await wait(400);
+        targetSprite.classList.remove('anim-hit');
+      }
+      
+      document.getElementById('enemy-img').classList.remove('anim-attack');
+      renderUI();
+      renderParty(); // 若有人死掉更新黑白狀態
+    }
+
+    // 回合結束，解鎖按鈕
+    let allDead = party.every(m => m.hp <= 0);
+    if(allDead) {
+      alert("全軍覆沒... 肉鴿旅途結束。");
+      currentLevel = 1;
+      party = JSON.parse(JSON.stringify(partyData));
+      document.getElementById('battle-screen').classList.remove('active');
+      document.getElementById('map-screen').classList.add('active');
+      renderMap();
+    }
+    
+    document.getElementById('btn-attack').disabled = false;
+  }
+
+  // 初始啟動
+  renderMap();
+</script>
+</body>
+</html>
+
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
   <title>GBF x 殺戮尖塔：空之塔戰記 (豪華重製版)</title>
   <style>
     :root {
